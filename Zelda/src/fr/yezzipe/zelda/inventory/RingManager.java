@@ -6,6 +6,7 @@ import fr.yezzipe.zelda.items.enums.Ring;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -30,8 +31,8 @@ public class RingManager extends InventoryManager {
   
   public static void handleClick(InventoryClickEvent e) {
     boolean shift = e.isShiftClick();
-    List<Integer> blockedSlots = Arrays.asList(new Integer[] { Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(6), Integer.valueOf(7), Integer.valueOf(8) });
-    List<Integer> restrictedSlots = Arrays.asList(new Integer[] { Integer.valueOf(3), Integer.valueOf(4), Integer.valueOf(5) });
+    Collection<Integer> blockedSlots = Arrays.asList(new Integer[] { Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(6), Integer.valueOf(7), Integer.valueOf(8) });
+    Collection<Integer> restrictedSlots = Arrays.asList(new Integer[] { Integer.valueOf(3), Integer.valueOf(4), Integer.valueOf(5) });
     ItemStack currItem = (e.getCurrentItem() == null) ? new ItemStack(Material.AIR) : e.getCurrentItem();
     ItemStack nextItem = (e.getCursor() == null) ? new ItemStack(Material.AIR) : e.getCursor();
     boolean iscurrItemRing = RingBuilder.isRing(currItem);

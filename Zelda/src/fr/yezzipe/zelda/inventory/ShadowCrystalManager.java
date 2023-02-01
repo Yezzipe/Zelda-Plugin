@@ -5,6 +5,7 @@ import fr.yezzipe.zelda.entity.player.PlayerData;
 import fr.yezzipe.zelda.territory.Waypoint;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -32,7 +33,7 @@ public class ShadowCrystalManager extends InventoryManager {
     final Player p = (Player)ent;
     PlayerData PData = PlayerData.getData(p);
     List<Waypoint> waypoints = PData.getWaypoints();
-    List<Integer> blockedSlots = Arrays.asList(new Integer[] { Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(6), Integer.valueOf(7), Integer.valueOf(8) });
+    Collection<Integer> blockedSlots = Arrays.asList(new Integer[] { Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(6), Integer.valueOf(7), Integer.valueOf(8) });
     ItemStack currItem = (e.getCurrentItem() == null) ? new ItemStack(Material.AIR) : e.getCurrentItem();
     if (blockedSlots.contains(Integer.valueOf(e.getRawSlot()))) {
       e.setCancelled(true);
@@ -209,7 +210,7 @@ public class ShadowCrystalManager extends InventoryManager {
   
   public static void handleDrag(InventoryDragEvent e) {
     Set<Integer> slots = e.getRawSlots();
-    List<Integer> blockedSlots = Arrays.asList(new Integer[] { Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(3), Integer.valueOf(4), Integer.valueOf(5), Integer.valueOf(6), Integer.valueOf(7), Integer.valueOf(8) });
+    Collection<Integer> blockedSlots = Arrays.asList(new Integer[] { Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(3), Integer.valueOf(4), Integer.valueOf(5), Integer.valueOf(6), Integer.valueOf(7), Integer.valueOf(8) });
     for (Iterator<Integer> iterator = slots.iterator(); iterator.hasNext(); ) {
       int slot = ((Integer)iterator.next()).intValue();
       if (blockedSlots.contains(Integer.valueOf(slot))) {

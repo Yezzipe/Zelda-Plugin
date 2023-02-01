@@ -70,5 +70,9 @@ public class PotionEffectMemory {
     public PotionEffect getPotionEffect() {
 	return new PotionEffect(getType(), duration, amplifier, isAmbient, hasParticles, hasIcon);
     }
+
+	public void incrementAmplifier(int amplifier2) {
+		amplifier += 1+amplifier2;
+	}
     
 }

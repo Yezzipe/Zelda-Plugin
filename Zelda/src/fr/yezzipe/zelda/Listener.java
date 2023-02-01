@@ -134,13 +134,13 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 public class Listener implements org.bukkit.event.Listener {
-    public static List<Material> chests = Arrays.asList(
+    public static Collection<Material> chests = Arrays.asList(
 	    new Material[] { Material.NETHERITE_CHESTPLATE, Material.DIAMOND_CHESTPLATE, Material.GOLDEN_CHESTPLATE,
 		    Material.IRON_CHESTPLATE, Material.CHAINMAIL_CHESTPLATE, Material.LEATHER_CHESTPLATE });
 
     public static HashMap<String, Arrow> hooks = new HashMap<>();
 
-    public static List<Location> disableLightning = new ArrayList<>();
+    public static Collection<Location> disableLightning = new ArrayList<>();
 
     public static HashMap<Player, BukkitTask> grapplingExtend = new HashMap<>();
 
@@ -174,12 +174,12 @@ public class Listener implements org.bukkit.event.Listener {
 	if (e.getTo().getChunk() != e.getFrom().getChunk()) {
 	    int x = e.getTo().getChunk().getX();
 	    int z = e.getTo().getChunk().getZ();
-	    List<Chunk> chunks2 = new ArrayList<>();
+	    Collection<Chunk> chunks2 = new ArrayList<>();
 	    for (int i = -3; i < 4; i++) {
 		for (int k = -3; k < 4; k++)
 		    chunks2.add(e.getTo().getWorld().getChunkAt(x + i, z + k));
 	    }
-	    List<Chunk> chunks = new ArrayList<>();
+	    Collection<Chunk> chunks = new ArrayList<>();
 	    for (int j = -1; j < 2; j++) {
 		for (int k = -1; k < 2; k++)
 		    chunks.add(e.getTo().getWorld().getChunkAt(x + j, z + k));
@@ -649,7 +649,7 @@ public class Listener implements org.bukkit.event.Listener {
 	}
     }
 
-    List<Player> glideCanceled = new ArrayList<>();
+    static Collection<Player> glideCanceled = new ArrayList<>();
 
     @EventHandler
     public void onProjectileLand(final ProjectileHitEvent e) {
@@ -682,7 +682,7 @@ public class Listener implements org.bukkit.event.Listener {
 			}
 		    }).runTaskTimerAsynchronously((Plugin) Main.getPlugin(Main.class), 0L, 6L);
 		    grapplingRetract.put(p, runnable);
-		    this.glideCanceled.add(p);
+		    glideCanceled.add(p);
 		    p.setGliding(true);
 		    (new BukkitRunnable() {
 			Location prevLoc = null;
@@ -696,7 +696,7 @@ public class Listener implements org.bukkit.event.Listener {
 			public void run() {
 			    if (!e.getEntity().isValid()) {
 				cancel();
-				Listener.this.glideCanceled.remove(p);
+				Listener.glideCanceled.remove(p);
 				p.setGliding(false);
 				if (PData.isAttachedToWall()) {
 				    PData.detachFromWall();
@@ -706,13 +706,13 @@ public class Listener implements org.bukkit.event.Listener {
 			    }
 			    if (Listener.hooks.get(p.getName()) == null) {
 				cancel();
-				Listener.this.glideCanceled.remove(p);
+				Listener.glideCanceled.remove(p);
 				p.setGliding(false);
 				return;
 			    }
 			    if (Listener.hooks.get(p.getName()) != e.getEntity()) {
 				cancel();
-				Listener.this.glideCanceled.remove(p);
+				Listener.glideCanceled.remove(p);
 				p.setGliding(false);
 				return;
 			    }
@@ -739,7 +739,7 @@ public class Listener implements org.bukkit.event.Listener {
 				    e.getEntity().remove();
 				    Listener.hooks.remove(p.getName());
 				    cancel();
-				    Listener.this.glideCanceled.remove(p);
+				    Listener.glideCanceled.remove(p);
 				    if (Listener.grapplingRetract.get(p) != null) {
 					Listener.grapplingRetract.remove(p);
 					p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
@@ -751,7 +751,7 @@ public class Listener implements org.bukkit.event.Listener {
 				} else if (v.length() > 1.0D && !PData.isAttachedToWall()) {
 				    p.setVelocity(vector);
 				} else if (!this.hasAttached) {
-				    Listener.this.glideCanceled.remove(p);
+				    Listener.glideCanceled.remove(p);
 				    if (Listener.grapplingRetract.get(p) != null) {
 					Listener.grapplingRetract.remove(p);
 					p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
@@ -769,7 +769,7 @@ public class Listener implements org.bukkit.event.Listener {
 				PData.attachToWall();
 				p.setGliding(false);
 				p.setVelocity(new Vector(0, 0, 0));
-				Listener.this.glideCanceled.remove(p);
+				Listener.glideCanceled.remove(p);
 				if (Listener.grapplingRetract.get(p) != null) {
 				    Listener.grapplingRetract.remove(p);
 				    p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
@@ -983,7 +983,7 @@ public class Listener implements org.bukkit.event.Listener {
 	org.bukkit.entity.Entity ent = event.getEntity();
 	if (ent instanceof Player) {
 	    Player p = (Player) ent;
-	    if (this.glideCanceled.contains(p) && !event.isGliding())
+	    if (glideCanceled.contains(p) && !event.isGliding())
 		event.setCancelled(true);
 	}
     }
@@ -1003,7 +1003,7 @@ public class Listener implements org.bukkit.event.Listener {
 	final Chunk chunk = p.getLocation().getChunk();
 	final int x = chunk.getX();
 	final int z = chunk.getZ();
-	List<Chunk> chunks = new ArrayList<>();
+	Collection<Chunk> chunks = new ArrayList<>();
 	for (int i = -3; i < 4; i++) {
 	    for (int j = -3; j < 4; j++)
 		chunks.add(chunk.getWorld().getChunkAt(x + i, z + j));
@@ -1065,7 +1065,7 @@ public class Listener implements org.bukkit.event.Listener {
 	}
 	(new BukkitRunnable() {
 	    public void run() {
-		List<Chunk> chunks = new ArrayList<>();
+		Collection<Chunk> chunks = new ArrayList<>();
 		for (int i = -1; i < 2; i++) {
 		    for (int j = -1; j < 2; j++)
 			chunks.add(chunk.getWorld().getChunkAt(x + i, z + j));
@@ -1717,9 +1717,9 @@ public class Listener implements org.bukkit.event.Listener {
 	}
     }
 
-    private List<Location> lootChest = new ArrayList<>();
+    private Collection<Location> lootChest = new ArrayList<>();
 
-    private List<UUID> lootMinecart = new ArrayList<>();
+    private Collection<UUID> lootMinecart = new ArrayList<>();
 
     @EventHandler
     public void onLootGenerate(LootGenerateEvent e) {
@@ -1756,10 +1756,10 @@ public class Listener implements org.bukkit.event.Listener {
 	InventoryHolder holder = e.getInventoryHolder();
 	if (holder instanceof Chest) {
 	    Chest chest = (Chest) holder;
-	    this.lootChest.add(chest.getLocation());
+	    lootChest.add(chest.getLocation());
 	} else if (holder instanceof StorageMinecart) {
 	    StorageMinecart minecart = (StorageMinecart) holder;
-	    this.lootMinecart.add(minecart.getUniqueId());
+	    lootMinecart.add(minecart.getUniqueId());
 	}
     }
 
@@ -1768,17 +1768,17 @@ public class Listener implements org.bukkit.event.Listener {
 	InventoryHolder holder = e.getInventory().getHolder();
 	if (holder instanceof Chest) {
 	    Chest chest = (Chest) holder;
-	    if (this.lootChest.contains(chest.getLocation())) {
+	    if (lootChest.contains(chest.getLocation())) {
 		Player p = (Player) e.getPlayer();
 		p.playSound(chest.getLocation(), "zelda.open_chest", SoundCategory.MUSIC, 1000.0F, 1.0F);
-		this.lootChest.remove(chest.getLocation());
+		lootChest.remove(chest.getLocation());
 	    }
 	} else if (holder instanceof StorageMinecart) {
 	    StorageMinecart minecart = (StorageMinecart) holder;
-	    if (this.lootMinecart.contains(minecart.getUniqueId())) {
+	    if (lootMinecart.contains(minecart.getUniqueId())) {
 		Player p = (Player) e.getPlayer();
 		p.playSound(minecart.getLocation(), "zelda.open_chest", SoundCategory.MUSIC, 1000.0F, 1.0F);
-		this.lootMinecart.remove(minecart.getUniqueId());
+		lootMinecart.remove(minecart.getUniqueId());
 	    }
 	}
     }

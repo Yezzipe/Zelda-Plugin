@@ -1,7 +1,7 @@
 package fr.yezzipe.zelda.entity.player;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 import org.bukkit.block.Biome;
 
@@ -9,8 +9,8 @@ import fr.yezzipe.zelda.entity.enums.Race;
 
 public class BiomeRegistry {
 
-    public static List<Race> getRaceFromBiome(Biome biome) {
-	List<Race> list = new ArrayList<Race>();
+    public static Collection<Race> getRaceFromBiome(Biome biome) {
+	Collection<Race> list = new ArrayList<Race>();
 	switch (biome) {
 	case BADLANDS:
 	case ERODED_BADLANDS:
@@ -66,7 +66,7 @@ public class BiomeRegistry {
 	// case MANGROVE:
 	case TAIGA:
 	case SWAMP:
-	    list.add(Race.SHEIKA);
+	    list.add(Race.SHEIKAH);
 	    break;
 	case SMALL_END_ISLANDS:
 	case END_BARRENS:
@@ -75,7 +75,7 @@ public class BiomeRegistry {
 	case THE_VOID:
 	case THE_END:
 	    list.add(Race.TWILI);
-	    list.add(Race.SHEIKA);
+	    list.add(Race.SHEIKAH);
 	    break;
 	case BAMBOO_JUNGLE:
 	case SPARSE_JUNGLE:

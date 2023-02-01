@@ -4,8 +4,8 @@ import fr.yezzipe.zelda.items.RupeeBuilder;
 import fr.yezzipe.zelda.items.enums.Rupees;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.bukkit.Material;
@@ -28,7 +28,7 @@ public class ExchangeManager extends InventoryManager {
   
   public static void handleClick(InventoryClickEvent e) {
     Player p = (Player)e.getWhoClicked();
-    List<Integer> blockedSlots = Arrays.asList(new Integer[] { Integer.valueOf(0), Integer.valueOf(8) });
+    Collection<Integer> blockedSlots = Arrays.asList(new Integer[] { Integer.valueOf(0), Integer.valueOf(8) });
     ItemStack currItem = (e.getCurrentItem() == null) ? new ItemStack(Material.AIR) : e.getCurrentItem();
     if (blockedSlots.contains(Integer.valueOf(e.getRawSlot()))) {
       e.setCancelled(true);
@@ -178,7 +178,7 @@ public class ExchangeManager extends InventoryManager {
   
   public static void handleDrag(InventoryDragEvent e) {
     Set<Integer> slots = e.getRawSlots();
-    List<Integer> blockedSlots = Arrays.asList(new Integer[] { Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(3), Integer.valueOf(4), Integer.valueOf(5), Integer.valueOf(6), Integer.valueOf(7), Integer.valueOf(8) });
+    Collection<Integer> blockedSlots = Arrays.asList(new Integer[] { Integer.valueOf(0), Integer.valueOf(1), Integer.valueOf(2), Integer.valueOf(3), Integer.valueOf(4), Integer.valueOf(5), Integer.valueOf(6), Integer.valueOf(7), Integer.valueOf(8) });
     for (Iterator<Integer> iterator = slots.iterator(); iterator.hasNext(); ) {
       int slot = ((Integer)iterator.next()).intValue();
       if (blockedSlots.contains(Integer.valueOf(slot))) {

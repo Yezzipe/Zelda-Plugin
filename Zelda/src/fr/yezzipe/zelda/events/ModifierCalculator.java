@@ -14,7 +14,7 @@ public class ModifierCalculator {
       if (race == Race.PIAF)
         mod += 0.1D; 
     } else if (damageType == DamageType.LIGHT) {
-      if (race == Race.SHEIKA)
+      if (race == Race.SHEIKAH)
         mod -= 0.1D; 
       if (race == Race.TWILI)
         mod += 0.1D; 
@@ -35,7 +35,7 @@ public class ModifierCalculator {
       if (race == Race.GERUDO)
         mod += 0.15D; 
     } else if (damageType == DamageType.ELECTRIC) {
-      if (race == Race.SHEIKA)
+      if (race == Race.SHEIKAH)
         mod -= 0.15D; 
       if (race == Race.GORON)
         mod -= 0.1D; 
@@ -64,12 +64,12 @@ public class ModifierCalculator {
     } else if (damageType == DamageType.FIRE) {
       if (race == Race.GERUDO)
         mod += 0.1D; 
-      if (race == Race.SHEIKA)
+      if (race == Race.SHEIKAH)
         mod -= 0.1D; 
     } else if (damageType == DamageType.ICE) {
       if (race == Race.ZORA)
         mod += 0.1D; 
-      if (race == Race.SHEIKA)
+      if (race == Race.SHEIKAH)
         mod -= 0.1D; 
     } else if (damageType == DamageType.ELECTRIC) {
       if (race == Race.GERUDO)

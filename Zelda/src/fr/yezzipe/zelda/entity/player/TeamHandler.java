@@ -14,7 +14,7 @@ public class TeamHandler {
   
   private Team gerudo;
   
-  private Team sheika;
+  private Team sheikah;
   
   private Team twili;
   
@@ -33,8 +33,8 @@ public class TeamHandler {
     this.goron.setColor(ChatColor.DARK_RED);
     this.gerudo = board.registerNewTeam("gerudo");
     this.gerudo.setColor(ChatColor.YELLOW);
-    this.sheika = board.registerNewTeam("sheika");
-    this.sheika.setColor(ChatColor.DARK_PURPLE);
+    this.sheikah = board.registerNewTeam("sheikah");
+    this.sheikah.setColor(ChatColor.DARK_PURPLE);
     this.twili = board.registerNewTeam("twili");
     this.twili.setColor(ChatColor.DARK_GRAY);
     this.hylien = board.registerNewTeam("hylien");
@@ -60,8 +60,8 @@ public class TeamHandler {
       case GERUDO:
         this.gerudo.addEntry(p.getName());
         break;
-      case SHEIKA:
-        this.sheika.addEntry(p.getName());
+      case SHEIKAH:
+        this.sheikah.addEntry(p.getName());
         break;
       case TWILI:
         this.twili.addEntry(p.getName());
@@ -85,7 +85,7 @@ public class TeamHandler {
     this.zora.removeEntry(p.getName());
     this.goron.removeEntry(p.getName());
     this.gerudo.removeEntry(p.getName());
-    this.sheika.removeEntry(p.getName());
+    this.sheikah.removeEntry(p.getName());
     this.twili.removeEntry(p.getName());
     this.hylien.removeEntry(p.getName());
     this.kokiri.removeEntry(p.getName());

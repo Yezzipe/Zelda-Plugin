@@ -24,7 +24,7 @@ public class RaceManager extends InventoryManager {
     inv.setItem(1, guiItemBuilder(Material.TRIDENT, "Peuple Zora"));
     inv.setItem(2, guiItemBuilder(Material.SANDSTONE, "Peuple Goron"));
     inv.setItem(3, guiItemBuilder(Material.DEAD_BUSH, "Peuple Gerudo"));
-    inv.setItem(5, guiItemBuilder(Material.ENDER_PEARL, "Peuple Sheika"));
+    inv.setItem(5, guiItemBuilder(Material.ENDER_PEARL, "Peuple Sheikah"));
     inv.setItem(6, guiItemBuilder(Material.BLACK_DYE, "Peuple Twili"));
     inv.setItem(7, guiItemBuilder(Material.SHIELD, "Peuple Hylien"));
     inv.setItem(8, guiItemBuilder(Material.FERN, "Peuple Kokiri"));
@@ -77,7 +77,7 @@ public class RaceManager extends InventoryManager {
         p.closeInventory();
         break;
       case 5:
-        PData.setCurrentRace(Race.SHEIKA);
+        PData.setCurrentRace(Race.SHEIKAH);
         p.closeInventory();
         break;
       case 6:
