@@ -1,0 +1,73 @@
+name : Zelda
+version: 1.0
+api-version: 1.18
+author: Yezzipe
+main: fr.yezzipe.zelda.Main
+commands:
+  playerdata:
+    description: command for admins
+    permission: race.use
+  rings:
+    description: opens the rings menu
+    permission: rings.use
+  givecustom:
+    description: command for admins
+    permission: givecustom.use
+  drop:
+    description: command for admins
+    permission: drop.use
+  exchange:
+    description: to exchange rupees
+    permission: exchange.use
+  spawnnpc:
+    description: command for admins
+    permission: spawnnpc.use
+  writestruc:
+    description: command for admins
+    permission: writestruc.use
+  buildstruc:
+    description: command for admins
+    permission: buildstruc.use
+  updatestruc:
+    description: command for admins
+    permission: updatestruc.use
+  clearinfluence:
+    description: command for admins
+    permission: clearinfluence.use
+  refreshchunks:
+    description: command for admins
+    permission: refreshchunks.use
+permissions:
+  playerdata.use:
+    description: command for admins
+    default: op
+  rings.use:
+    description: opens the rings menu
+    default: true
+  givecustom.use:
+    description: command for admins
+    default: op  
+  drop.use:
+    description: command for admins
+    default: op
+  exchange.use:
+    description: to exchange rupees
+    default: true
+  spawnnpc.use:
+    description: command for admins
+    default: op
+  writestruc.use:
+    description: command for admins
+    default: op
+  buildstruc.use:
+    description: command for admins
+    default: op
+  updatestruc.use:
+    description: command for admins
+    default: op
+  clearinfluence.use:
+    description: command for admins
+    default: op
+  refreshchunks.use:
+    description: command for admins
+    default: op
