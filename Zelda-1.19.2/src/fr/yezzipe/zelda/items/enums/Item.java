@@ -1,0 +1,5 @@
+package fr.yezzipe.zelda.items.enums;
+
+public enum Item {
+  GRAPPLING_HOOK, LIGHT_BOW, DARK_BOW, ICE_BOW, ELECTRIC_BOW, FIRE_BOW, HEART_PIECE, HEART_CONTAINER, SHADOW_CRYSTAL;
+}
