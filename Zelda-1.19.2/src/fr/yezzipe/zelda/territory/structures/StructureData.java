@@ -302,7 +302,7 @@ public class StructureData {
   }
   
   public static StructureData load(String name, BlockFace face) {
-    return (StructureData)Main.read(String.valueOf(folderPrefix) + name + "/" + face.toString() + "/struc", StructureData.class);
+    return Main.read(String.valueOf(folderPrefix) + name + "/" + face.toString() + "/struc");
   }
   
   public StructureType getType() {

@@ -46,7 +46,6 @@ public class PlayerDataCommand implements CommandExecutor {
           PData.setCurrentRace(newRace);
           PData.setBonusHealth(bonus);
           PData.tick(true, true, true);
-          PData.save();
           PlayerData.applyColors(p);
           PlayerData.applyAttributes(p, true);
           arg0.sendMessage("§aSuccessfully changed player's data !");

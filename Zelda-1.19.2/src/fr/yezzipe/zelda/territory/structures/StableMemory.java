@@ -1,6 +1,5 @@
 package fr.yezzipe.zelda.territory.structures;
 
-import com.google.gson.reflect.TypeToken;
 import de.tr7zw.nbtapi.NBTBlock;
 import fr.yezzipe.zelda.Main;
 import fr.yezzipe.zelda.entity.enums.Race;
@@ -11,7 +10,6 @@ import fr.yezzipe.zelda.entity.player.PlayerData;
 import fr.yezzipe.zelda.territory.HTTPChunk;
 import fr.yezzipe.zelda.territory.TerritoryChunk;
 import fr.yezzipe.zelda.territory.TerritoryUtil;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -166,14 +164,12 @@ public class StableMemory {
       if (p != null) {
     	PlayerData PData = PlayerData.getData(p);
     	PData.removeStable(this);
-        PData.save();
         continue;
       } 
       OfflinePlayer oP = Bukkit.getOfflinePlayer(pUUID);
       if (oP != null) {
         PlayerData PData = PlayerData.getData(oP);
         PData.removeStable(this);
-        PData.save();
       } 
     } 
     Thread thread = new Thread(new Runnable() {
@@ -322,19 +318,15 @@ public class StableMemory {
     Main.write(String.valueOf(folderPrefix) + "list", list);
   }
   
-  @SuppressWarnings("unchecked")
   public static void loadAll() {
-    Type list = (new TypeToken<ArrayList<UUID>>() {
-      
-      }).getType();
-    List<UUID> uuids = (List<UUID>)Main.read(String.valueOf(folderPrefix) + "list", list);
+    List<UUID> uuids = Main.read(String.valueOf(folderPrefix) + "list");
     if (uuids != null)
       for (UUID uuid : uuids)
         load(uuid);  
   }
   
   private static void load(UUID uuid2) {
-    StableMemory stable = (StableMemory)Main.read(String.valueOf(folderPrefix) + uuid2.toString(), StableMemory.class);
+    StableMemory stable = Main.read(String.valueOf(folderPrefix) + uuid2.toString());
     stable.register();
   }
   
