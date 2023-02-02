@@ -15,5 +15,4 @@ module Zelda {
 	requires io.netty.all;
 	requires org.jsoup;
 	requires java.desktop;
-	requires java.sql;
 }
