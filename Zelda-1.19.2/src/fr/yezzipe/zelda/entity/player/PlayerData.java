@@ -32,6 +32,7 @@ import org.bukkit.entity.Monster;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -144,16 +145,16 @@ public class PlayerData {
 	}
 	if (currentRace == Race.TWILI) {
 	    for (Player player : Bukkit.getOnlinePlayers()) {
-		p.showPlayer(Main.getPlugin(Main.class), player);
+		p.showPlayer((Plugin) Main.getInstance(), player);
 	    }
 	} else {
 	    setVisible();
 	    for (Player player : Bukkit.getOnlinePlayers()) {
 		PlayerData PData = PlayerData.getData(player);
 		if (PData.isVisible)
-		    p.showPlayer(Main.getPlugin(Main.class), player);
+		    p.showPlayer((Plugin) Main.getInstance(), player);
 		else
-		    p.hidePlayer(Main.getPlugin(Main.class), player);
+		    p.hidePlayer((Plugin) Main.getInstance(), player);
 	    }
 	}
 	PlayerData.applyColors(p);
@@ -217,7 +218,7 @@ public class PlayerData {
 		    applyEffects(false);
 
 	    }
-	}.runTaskTimer(Main.getPlugin(Main.class), 0, 20).getTaskId();
+	}.runTaskTimer((Plugin) Main.getInstance(), 0, 20).getTaskId();
     }
 
     public void unregister() {
@@ -336,7 +337,7 @@ public class PlayerData {
 	case GERUDO:
 	    list.add(new PotionEffectMemory(PotionEffectType.INCREASE_DAMAGE, 2147483647, 0, false, false, false));
 	    if (p.getWorld().getEnvironment() == Environment.NORMAL) {
-		if (BiomeRegistry.getRaceFromBiome(currentBiome).contains(currentRace)
+		if (BiomeRegistry.isMainBiome(this)
 			&& p.getWorld().getTime() <= 12000) {
 		    list.add(new PotionEffectMemory(PotionEffectType.SPEED, 2147483647, 0, false, false, false));
 		}
@@ -385,7 +386,7 @@ public class PlayerData {
 
 	clearEffects(resetEffects);
 
-	PotionEffectMemory biomeEffect = BiomeRegistry.getRaceFromBiome(currentBiome).contains(currentRace)
+	PotionEffectMemory biomeEffect = BiomeRegistry.isMainBiome(this)
 		&& currentRace != Race.KOKIRI
 			? new PotionEffectMemory(PotionEffectType.REGENERATION, 2147483647, 0, false, false, false)
 			: null;
@@ -609,7 +610,7 @@ public class PlayerData {
 	for (Player player : Bukkit.getOnlinePlayers()) {
 	    PlayerData PData = PlayerData.getData(player);
 	    if (PData.getCurrentRace() != Race.TWILI)
-		player.showPlayer(Main.getPlugin(Main.class), p);
+		player.showPlayer((Plugin) Main.getInstance(), p);
 	}
 	this.isVisible = true;
     }
@@ -619,7 +620,7 @@ public class PlayerData {
 	for (Player player : Bukkit.getOnlinePlayers()) {
 	    PlayerData PData = PlayerData.getData(player);
 	    if (PData.getCurrentRace() != Race.TWILI)
-		player.hidePlayer(Main.getPlugin(Main.class), p);
+		player.hidePlayer((Plugin) Main.getInstance(), p);
 	}
 	this.isVisible = false;
     }
@@ -689,7 +690,7 @@ public class PlayerData {
 	    }
 	} else {
 	    if (isAtNight && currentDimension == Environment.NORMAL
-		    && BiomeRegistry.getRaceFromBiome(currentBiome).contains(currentRace)) {
+		    && BiomeRegistry.isMainBiome(this)) {
 		mustChange = !isSpedUp;
 		isSpedUp = true;
 	    } else {
@@ -711,7 +712,7 @@ public class PlayerData {
     }
 
     private void checkSeeNearbyEnemies() {
-	if (currentRace != Race.KOKIRI || !BiomeRegistry.getRaceFromBiome(currentBiome).contains(Race.KOKIRI))
+	if (currentRace != Race.KOKIRI || !BiomeRegistry.isMainBiome(this))
 	    return;
 	Player p = Bukkit.getPlayer(getUuid());
 	List<org.bukkit.entity.Entity> entities = p.getNearbyEntities(30, 30, 30);
@@ -764,4 +765,8 @@ public class PlayerData {
     public void resetExtraEffects() {
 	applyEffects(true);
     }
+
+	public Biome getCurrentBiome() {
+		return currentBiome;
+	}
 }

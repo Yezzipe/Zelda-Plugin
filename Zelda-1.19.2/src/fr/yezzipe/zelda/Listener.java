@@ -515,7 +515,7 @@ public class Listener implements org.bukkit.event.Listener {
 			    public void run() {
 				PData.setNoLeftClickHook(false);
 			    }
-			}).runTaskLater((Plugin) Main.getPlugin(Main.class), 5L);
+			}).runTaskLater((Plugin) Main.getInstance(), 5L);
 			BukkitTask runnable = (new BukkitRunnable() {
 			    public void run() {
 				if (Listener.grapplingExtend.get(p) == null) {
@@ -529,7 +529,7 @@ public class Listener implements org.bukkit.event.Listener {
 				    cancel();
 				}
 			    }
-			}).runTaskTimerAsynchronously((Plugin) Main.getPlugin(Main.class), 0L, 13L);
+			}).runTaskTimerAsynchronously((Plugin) Main.getInstance(), 0L, 13L);
 			grapplingExtend.put(p, runnable);
 		    } else if (e.getAction() == Action.LEFT_CLICK_BLOCK) {
 			e.setCancelled(true);
@@ -611,7 +611,7 @@ public class Listener implements org.bukkit.event.Listener {
 				p.playSound(p.getLocation(), "zelda.heart.get", SoundCategory.PLAYERS, 1000.0F, 1.0F);
 			    }
 			}
-		    }).runTaskTimerAsynchronously((Plugin) Main.getPlugin(Main.class), 0L, 5L);
+		    }).runTaskTimerAsynchronously((Plugin) Main.getInstance(), 0L, 5L);
 		} else if (nbt.getString("ItemType").equals("Shadow_Crystal")) {
 		    e.setCancelled(true);
 		    if (p.isSneaking()) {
@@ -680,7 +680,7 @@ public class Listener implements org.bukkit.event.Listener {
 				cancel();
 			    }
 			}
-		    }).runTaskTimerAsynchronously((Plugin) Main.getPlugin(Main.class), 0L, 6L);
+		    }).runTaskTimerAsynchronously((Plugin) Main.getInstance(), 0L, 6L);
 		    grapplingRetract.put(p, runnable);
 		    glideCanceled.add(p);
 		    p.setGliding(true);
@@ -779,17 +779,17 @@ public class Listener implements org.bukkit.event.Listener {
 			    this.prevLoc2 = this.prevLoc;
 			    this.prevLoc = loc2;
 			}
-		    }).runTaskTimer((Plugin) Main.getPlugin(Main.class), 0L, 2L);
+		    }).runTaskTimer((Plugin) Main.getInstance(), 0L, 2L);
 		}
 	    } else {
 		Projectile proj = e.getEntity();
 
 		if (proj instanceof Arrow && proj.getPersistentDataContainer().has(
-			new NamespacedKey((Plugin) Main.getPlugin(Main.class), "DamageType"),
+			new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			PersistentDataType.STRING)) {
 		    final Arrow arrow = (Arrow) proj;
 		    String string = (String) arrow.getPersistentDataContainer().get(
-			    new NamespacedKey((Plugin) Main.getPlugin(Main.class), "DamageType"),
+			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING);
 		    DamageType dmgType = DamageType.valueOf(string);
 		    if (dmgType == DamageType.FIRE) {
@@ -831,7 +831,7 @@ public class Listener implements org.bukkit.event.Listener {
 			    public void run() {
 				Listener.disableLightning.remove(arrow.getLocation());
 			    }
-			}).runTaskLaterAsynchronously((Plugin) Main.getPlugin(Main.class), 40L);
+			}).runTaskLaterAsynchronously((Plugin) Main.getInstance(), 40L);
 		    }
 		}
 	    }
@@ -863,7 +863,7 @@ public class Listener implements org.bukkit.event.Listener {
 				cancel();
 			    }
 			}
-		    }).runTaskTimerAsynchronously((Plugin) Main.getPlugin(Main.class), 0L, 6L);
+		    }).runTaskTimerAsynchronously((Plugin) Main.getInstance(), 0L, 6L);
 		    grapplingRetract.put(p, runnable);
 		    e.setCancelled(true);
 		    e.getEntity().remove();
@@ -972,7 +972,7 @@ public class Listener implements org.bukkit.event.Listener {
 				}
 			    }
 			}
-		    }).runTaskTimer((Plugin) Main.getPlugin(Main.class), 0L, 2L);
+		    }).runTaskTimer((Plugin) Main.getInstance(), 0L, 2L);
 		}
 	    }
 	}
@@ -1079,7 +1079,7 @@ public class Listener implements org.bukkit.event.Listener {
 			}
 		}
 	    }
-	}).runTaskLater((Plugin) Main.getPlugin(Main.class), 20L);
+	}).runTaskLater((Plugin) Main.getInstance(), 20L);
     }
 
     @EventHandler
@@ -1164,7 +1164,7 @@ public class Listener implements org.bukkit.event.Listener {
 		if (!e.getPlayer().isOnline())
 		    cancel();
 	    }
-	}).runTaskTimer((Plugin) Main.getPlugin(Main.class), 0L, 2L);
+	}).runTaskTimer((Plugin) Main.getInstance(), 0L, 2L);
     }
 
     @EventHandler
@@ -1332,7 +1332,7 @@ public class Listener implements org.bukkit.event.Listener {
 	    if (damager instanceof Arrow) {
 		Arrow arrow = (Arrow) damager;
 		if (arrow.getPersistentDataContainer().has(
-			new NamespacedKey((Plugin) Main.getPlugin(Main.class), "DamageType"), PersistentDataType.STRING)
+			new NamespacedKey((Plugin) Main.getInstance(), "DamageType"), PersistentDataType.STRING)
 			&& ent instanceof org.bukkit.entity.Entity) {
 		    EntityDarkDamageByEntityEvent eventDark;
 		    EntityElectricDamageByEntityEvent eventElectric;
@@ -1341,7 +1341,7 @@ public class Listener implements org.bukkit.event.Listener {
 		    EntityLightDamageByEntityEvent eventLight;
 		    org.bukkit.entity.Entity shooter = (org.bukkit.entity.Entity) ent;
 		    String damageTypeString = (String) arrow.getPersistentDataContainer().get(
-			    new NamespacedKey((Plugin) Main.getPlugin(Main.class), "DamageType"),
+			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING);
 		    DamageType damageType = DamageType.valueOf(damageTypeString);
 		    switch (damageType) {
@@ -1496,7 +1496,7 @@ public class Listener implements org.bukkit.event.Listener {
 		    public void run() {
 			mob.setAI(true);
 		    }
-		}).runTaskLaterAsynchronously((Plugin) Main.getPlugin(Main.class), 8L);
+		}).runTaskLaterAsynchronously((Plugin) Main.getInstance(), 8L);
 	    }
 	    double mod1 = RingCalculator.getDarkDamageModifier(rings);
 	    double mod2 = ModifierCalculator.getStrengthModifier(DamageType.DARK, PData.getCurrentRace());
@@ -1518,7 +1518,7 @@ public class Listener implements org.bukkit.event.Listener {
 		public void run() {
 		    Listener.disableLightning.remove(p.getLocation());
 		}
-	    }).runTaskLaterAsynchronously((Plugin) Main.getPlugin(Main.class), 40L);
+	    }).runTaskLaterAsynchronously((Plugin) Main.getInstance(), 40L);
 	    Player p2 = (Player) attacker;
 	    PlayerData PData2 = PlayerData.getData(p2);
 	    List<Ring> rings2 = PData2.getRings();
@@ -1538,7 +1538,7 @@ public class Listener implements org.bukkit.event.Listener {
 		public void run() {
 		    Listener.disableLightning.remove(p.getLocation());
 		}
-	    }).runTaskLaterAsynchronously((Plugin) Main.getPlugin(Main.class), 40L);
+	    }).runTaskLaterAsynchronously((Plugin) Main.getInstance(), 40L);
 	    double mod1 = RingCalculator.getElectricArmorModifier(rings);
 	    double mod2 = ModifierCalculator.getResitanceModifier(DamageType.ELECTRIC, PData.getCurrentRace());
 	    e.setDamage(e.getDamage() * mod1 * mod2 * 1.45D);
@@ -1553,7 +1553,7 @@ public class Listener implements org.bukkit.event.Listener {
 		public void run() {
 		    Listener.disableLightning.remove(entity.getLocation());
 		}
-	    }).runTaskLaterAsynchronously((Plugin) Main.getPlugin(Main.class), 40L);
+	    }).runTaskLaterAsynchronously((Plugin) Main.getInstance(), 40L);
 	    double mod1 = RingCalculator.getElectricDamageModifier(rings);
 	    double mod2 = ModifierCalculator.getStrengthModifier(DamageType.ELECTRIC, PData.getCurrentRace());
 	    e.setDamage(e.getDamage() * mod1 * mod2 * 1.45D);
@@ -1678,27 +1678,27 @@ public class Listener implements org.bukkit.event.Listener {
 	    if (nbt.getKeys().contains("ItemType"))
 		if (nbt.getString("ItemType").equals("Light_Bow")) {
 		    arrow.getPersistentDataContainer().set(
-			    new NamespacedKey((Plugin) Main.getPlugin(Main.class), "DamageType"),
+			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.LIGHT.toString());
 		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		} else if (nbt.getString("ItemType").equals("Dark_Bow")) {
 		    arrow.getPersistentDataContainer().set(
-			    new NamespacedKey((Plugin) Main.getPlugin(Main.class), "DamageType"),
+			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.DARK.toString());
 		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		} else if (nbt.getString("ItemType").equals("Ice_Bow")) {
 		    arrow.getPersistentDataContainer().set(
-			    new NamespacedKey((Plugin) Main.getPlugin(Main.class), "DamageType"),
+			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.ICE.toString());
 		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		} else if (nbt.getString("ItemType").equals("Electric_Bow")) {
 		    arrow.getPersistentDataContainer().set(
-			    new NamespacedKey((Plugin) Main.getPlugin(Main.class), "DamageType"),
+			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.ELECTRIC.toString());
 		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		} else if (nbt.getString("ItemType").equals("Fire_Bow")) {
 		    arrow.getPersistentDataContainer().set(
-			    new NamespacedKey((Plugin) Main.getPlugin(Main.class), "DamageType"),
+			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.FIRE.toString());
 		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		}
@@ -1900,7 +1900,7 @@ public class Listener implements org.bukkit.event.Listener {
 	    if (mat == Material.FERN || mat == Material.LARGE_FERN || mat == Material.GRASS
 		    || mat == Material.TALL_GRASS || mat == Material.DEAD_BUSH)
 		state.getBlock().setMetadata("NoRupee",
-			(MetadataValue) new FixedMetadataValue((Plugin) Main.getPlugin(Main.class),
+			(MetadataValue) new FixedMetadataValue((Plugin) Main.getInstance(),
 				Boolean.valueOf(true)));
 	}
     }
