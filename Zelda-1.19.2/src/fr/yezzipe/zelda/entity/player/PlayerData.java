@@ -5,9 +5,12 @@ import fr.yezzipe.zelda.entity.EntityManager;
 import fr.yezzipe.zelda.entity.PotionEffectMemory;
 import fr.yezzipe.zelda.entity.enums.Race;
 import fr.yezzipe.zelda.items.enums.Ring;
+import fr.yezzipe.zelda.territory.TemperatureRegistry;
 import fr.yezzipe.zelda.territory.Waypoint;
 import fr.yezzipe.zelda.territory.structures.StableMemory;
 import fr.yezzipe.zelda.entity.PotionUtil;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.network.protocol.game.PacketPlayOutEntityMetadata;
 import net.minecraft.network.syncher.DataWatcher;
 import net.minecraft.network.syncher.DataWatcherObject;
@@ -25,6 +28,8 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.World.Environment;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.Waterlogged;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -79,6 +84,8 @@ public class PlayerData {
     private static HashMap<String, PlayerData> Players = new HashMap<String, PlayerData>();
 
     private int potionTask;
+    
+    private int titleTask;
 
     private Biome currentBiome;
 
@@ -194,7 +201,7 @@ public class PlayerData {
 	isSpedUp = false;
 	this.skyLight = p.getLocation().getBlock().getLightFromSky();
 	this.blockLight = p.getLocation().getBlock().getLightFromBlocks();
-	this.isUnderwater = p.getEyeLocation().getBlock().getType() == Material.WATER;
+	this.isUnderwater = isPlayerInWater();
 	tick(true, true, currentRace == Race.NONE || currentRace == null);
 	potionTask = new BukkitRunnable() {
 
@@ -219,12 +226,24 @@ public class PlayerData {
 
 	    }
 	}.runTaskTimer((Plugin) Main.getInstance(), 0, 20).getTaskId();
+	titleTask = new BukkitRunnable() {
+	    
+	    @Override
+	    public void run() {
+		if (!p.isOnline()) {
+		    cancel();
+		    return;
+		}
+		sendTemperature();
+	    }
+	}.runTaskTimerAsynchronously((Plugin) Main.getInstance(), 0, 2).getTaskId();
     }
 
     public void unregister() {
 	save();
 	Players.remove(getUuid().toString());
 	Bukkit.getScheduler().cancelTask(potionTask);
+	Bukkit.getScheduler().cancelTask(titleTask);
     }
 
     public void setHealth(double health) {
@@ -337,8 +356,7 @@ public class PlayerData {
 	case GERUDO:
 	    list.add(new PotionEffectMemory(PotionEffectType.INCREASE_DAMAGE, 2147483647, 0, false, false, false));
 	    if (p.getWorld().getEnvironment() == Environment.NORMAL) {
-		if (BiomeRegistry.isMainBiome(this)
-			&& p.getWorld().getTime() <= 12000) {
+		if (BiomeRegistry.isMainBiome(this) && p.getWorld().getTime() <= 12000) {
 		    list.add(new PotionEffectMemory(PotionEffectType.SPEED, 2147483647, 0, false, false, false));
 		}
 	    }
@@ -386,10 +404,9 @@ public class PlayerData {
 
 	clearEffects(resetEffects);
 
-	PotionEffectMemory biomeEffect = BiomeRegistry.isMainBiome(this)
-		&& currentRace != Race.KOKIRI
-			? new PotionEffectMemory(PotionEffectType.REGENERATION, 2147483647, 0, false, false, false)
-			: null;
+	PotionEffectMemory biomeEffect = BiomeRegistry.isMainBiome(this) && currentRace != Race.KOKIRI
+		? new PotionEffectMemory(PotionEffectType.REGENERATION, 2147483647, 0, false, false, false)
+		: null;
 	Collection<PotionEffectMemory> ringEffects = getPotionsFromRings();
 	Collection<PotionEffectMemory> raceEffect = getPotionFromRace();
 	Collection<PotionEffectMemory> potions = new ArrayList<>();
@@ -525,7 +542,7 @@ public class PlayerData {
 		contain = true;
 		e = eff;
 		break;
-		
+
 	    }
 	}
 	if (contain) {
@@ -541,14 +558,14 @@ public class PlayerData {
 		contained = true;
 		if (eff.getDuration() != effect.getDuration()) {
 		    eff.setDuration(effect.getDuration());
-		} 
+		}
 		if (eff.getAmplifier() < effect.getAmplifier()) {
 		    eff.setAmplifier(effect.getAmplifier());
 		}
-	    } 
+	    }
 	}
 	if (!contained) {
-	    effects.add(new PotionEffectMemory(effect));      
+	    effects.add(new PotionEffectMemory(effect));
 	}
 	applyEffects(false);
     }
@@ -689,8 +706,7 @@ public class PlayerData {
 		isSpedUp = true;
 	    }
 	} else {
-	    if (isAtNight && currentDimension == Environment.NORMAL
-		    && BiomeRegistry.isMainBiome(this)) {
+	    if (isAtNight && currentDimension == Environment.NORMAL && BiomeRegistry.isMainBiome(this)) {
 		mustChange = !isSpedUp;
 		isSpedUp = true;
 	    } else {
@@ -729,6 +745,16 @@ public class PlayerData {
 	    }
 	}
     }
+    
+    private boolean isPlayerInWater() {
+	Player p = Bukkit.getPlayer(getUuid());
+	Block b = p.getEyeLocation().getBlock();
+	if (b.getType() == Material.WATER || b.getType() == Material.KELP_PLANT || b.getType() == Material.SEAGRASS || b.getType() == Material.TALL_SEAGRASS) return true;
+	if (b.getBlockData() instanceof Waterlogged) {
+	    return ((Waterlogged) b.getBlockData()).isWaterlogged();
+	}
+	return false;
+    }
 
     public boolean checkTick(boolean dimensionCheck, Player p) {
 	// Update Player Informations
@@ -736,9 +762,9 @@ public class PlayerData {
 	mustChange = mustChange || checkBiome();
 	mustChange = mustChange || setSkyLight();
 	mustChange = mustChange || setBlockLight();
-	if (p.getEyeLocation().getBlock().getType() == Material.WATER && !isUnderwater())
+	if (isPlayerInWater() && !isUnderwater())
 	    mustChange = mustChange || gotInWater();
-	if (p.getEyeLocation().getBlock().getType() != Material.WATER && isUnderwater())
+	if (!isPlayerInWater() && isUnderwater())
 	    mustChange = mustChange || gotOutWater();
 	if (dimensionCheck)
 	    mustChange = mustChange || setCurrentDimension(p.getWorld().getEnvironment());
@@ -766,7 +792,18 @@ public class PlayerData {
 	applyEffects(true);
     }
 
-	public Biome getCurrentBiome() {
-		return currentBiome;
-	}
+    public Biome getCurrentBiome() {
+	return currentBiome;
+    }
+    
+    private void sendTemperature() {
+	Player p = Bukkit.getPlayer(getUuid());
+	TextComponent text = new TextComponent("<-------->");
+	text.setColor(TemperatureRegistry.getColor(TemperatureRegistry.getTemperature(currentBiome)));
+	p.spigot().sendMessage(ChatMessageType.ACTION_BAR, text);
+    }
+    
+    public boolean isVisible() {
+	return isVisible;
+    }
 }

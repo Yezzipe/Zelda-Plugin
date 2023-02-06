@@ -1,5 +1,6 @@
 package fr.yezzipe.zelda.entity.player;
 
+import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
@@ -14,6 +15,14 @@ public class PacketManager {
 	if (packet instanceof Packet) {
 	    PlayerConnection conn = (((CraftPlayer) player).getHandle()).b;
 	    conn.a((Packet<?>)packet);
+	}
+    }
+    
+    public static <T> void sendPacketToAll(T packet) {
+	if (packet instanceof Packet) {
+	    for(Player player : Bukkit.getOnlinePlayers()) {
+		sendPacket(player, packet);
+	    }
 	}
     }
     

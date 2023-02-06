@@ -2,6 +2,7 @@ package fr.yezzipe.zelda;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class Registry<T,Q> {
 	
@@ -21,5 +22,9 @@ public class Registry<T,Q> {
 	
 	public void unbind(T obj) {
 		map.remove(obj);
+	}
+	
+	public Set<T> keys() {
+	    return map.keySet();
 	}
 }

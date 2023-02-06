@@ -16,7 +16,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 public class StableManager extends InventoryManager {
-  public static HashMap<UUID, StableMemory> stables = new HashMap<>();
+  /*public static HashMap<UUID, StableMemory> stables = new HashMap<>();
   
   public static void populateStableTeleport(Inventory inv, Player p, StableMemory stable, int page) {
     UUID uuid = InventoryUUID.get(inv);
@@ -129,16 +129,7 @@ public class StableManager extends InventoryManager {
     p.openInventory(inv);
   }
   
-  public static boolean isStable(Inventory inv) {
-    UUID uuid = InventoryUUID.get(inv);
-    if (uuid == null)
-      return false; 
-    if (UUIDTypes.get(uuid) != CustomInventoryType.STABLE)
-      return false; 
-    return true;
-  }
-  
-  public static void handleClick(InventoryClickEvent e) {
+  public void handleClick(InventoryClickEvent e) {
     e.setCancelled(true);
     ItemStack item = e.getCurrentItem();
     if (item != null && 
@@ -397,6 +388,6 @@ public class StableManager extends InventoryManager {
 	break;
     } 
     return Material.WHITE_BED;
-  }
+  }*/
 }
 

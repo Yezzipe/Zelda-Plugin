@@ -91,7 +91,9 @@ public class BiomeRegistry<E,T> extends Registry<E,T> {
 	}
 	
 	public static boolean isMainBiome(PlayerData PData) {
-		return instance.get(PData.getCurrentBiome()).contains(PData.getCurrentRace());
+	    	Collection<Race> c = instance.get(PData.getCurrentBiome());
+	    	if (c == null) return false;
+		return c.contains(PData.getCurrentRace());
 	}
 
     /*public static Collection<Race> getRaceFromBiome(Biome biome) {

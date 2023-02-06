@@ -5,6 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 
+import fr.yezzipe.zelda.blocks.BlockBuilder;
 import fr.yezzipe.zelda.commands.ClearInfluenceCommand;
 import fr.yezzipe.zelda.commands.DropCommand;
 import fr.yezzipe.zelda.commands.DropCommandCompleter;
@@ -21,6 +22,7 @@ import fr.yezzipe.zelda.commands.StructureBuildCommand;
 import fr.yezzipe.zelda.commands.StructureUpdateCommand;
 import fr.yezzipe.zelda.commands.StructureWriteCommand;
 import fr.yezzipe.zelda.commands.StructureWriteCommandCompleter;
+import fr.yezzipe.zelda.entity.CustomBlock;
 import fr.yezzipe.zelda.entity.EntityManager;
 import fr.yezzipe.zelda.entity.PacketReader;
 import fr.yezzipe.zelda.entity.npc.CustomNPC;
@@ -83,6 +85,8 @@ public class Main extends JavaPlugin {
     BiomeRegistry.init();
     TemperatureRegistry.init();
     ItemBuilder.init();
+    BlockBuilder.init();
+    CustomBlock.initAll();
     
     listener = new Listener();
     getServer().getPluginManager().registerEvents(listener, (Plugin)this);
@@ -219,6 +223,7 @@ public class Main extends JavaPlugin {
   
   public void onDisable() {
     this.isRunning = false;
+    CustomBlock.saveAll();
     Collection<? extends Player> players = Bukkit.getServer().getOnlinePlayers();
     for (Player player : players) {
       PlayerData PData = PlayerData.getData(player);

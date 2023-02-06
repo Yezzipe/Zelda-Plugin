@@ -2,6 +2,9 @@ package fr.yezzipe.zelda;
 
 import de.tr7zw.nbtapi.NBTBlock;
 import de.tr7zw.nbtapi.NBTItem;
+import fr.yezzipe.zelda.blocks.BlockBuilder;
+import fr.yezzipe.zelda.blocks.enums.BlockEnum;
+import fr.yezzipe.zelda.entity.CustomBlock;
 import fr.yezzipe.zelda.entity.EntityManager;
 import fr.yezzipe.zelda.entity.PacketReader;
 import fr.yezzipe.zelda.entity.enums.Race;
@@ -19,13 +22,9 @@ import fr.yezzipe.zelda.events.LeftClickNPCEvent;
 import fr.yezzipe.zelda.events.ModifierCalculator;
 import fr.yezzipe.zelda.events.RightClickNPCEvent;
 import fr.yezzipe.zelda.events.enums.DamageType;
-import fr.yezzipe.zelda.inventory.CustomInventoryType;
-import fr.yezzipe.zelda.inventory.ExchangeManager;
 import fr.yezzipe.zelda.inventory.InventoryManager;
 import fr.yezzipe.zelda.inventory.RaceManager;
-import fr.yezzipe.zelda.inventory.RingManager;
 import fr.yezzipe.zelda.inventory.ShadowCrystalManager;
-import fr.yezzipe.zelda.inventory.StableManager;
 import fr.yezzipe.zelda.items.DropBuilder;
 import fr.yezzipe.zelda.items.ItemBuilder;
 import fr.yezzipe.zelda.items.ItemTable;
@@ -54,6 +53,7 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.PacketPlayOutAnimation;
 import net.minecraft.network.protocol.game.PacketPlayOutAttachEntity;
 import net.minecraft.world.entity.Entity;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.GameMode;
@@ -80,6 +80,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.event.Event;
+import org.bukkit.event.Event.Result;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -89,6 +90,7 @@ import org.bukkit.event.block.BlockFertilizeEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -97,8 +99,10 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
+import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
@@ -106,6 +110,7 @@ import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.PrepareAnvilEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -116,10 +121,12 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.LootGenerateEvent;
+import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.loot.LootTable;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -459,8 +466,22 @@ public class Listener implements org.bukkit.event.Listener {
 	    }
 	} else if (e.getHand() == EquipmentSlot.HAND) {
 	    ItemStack item = p.getInventory().getItemInMainHand();
-	    if (item == null || item.getType() == Material.AIR)
+	    if (item == null || item.getType() == Material.AIR) {
+		if (e.getClickedBlock() != null) {
+		    Block b = e.getClickedBlock();
+		    NBTBlock nbt2 = new NBTBlock(b);
+		    if (nbt2.getData().getKeys().contains("LinkedArmorStand")) {
+			if (p.isSneaking()) {
+			    String uuid = nbt2.getData().getString("LinkedArmorStand");
+			    CustomBlock cb = CustomBlock.getCustomBlock(uuid);
+			    cb.remove();
+			    p.getInventory().addItem(BlockBuilder.build(BlockEnum.CAMP_UNLIT));
+			} else
+			    p.sendMessage("not sneaking");
+		    }
+		}
 		return;
+	    }
 	    NBTItem nbt = new NBTItem(item);
 	    if (chests.contains(item.getType())) {
 		if ((e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
@@ -640,9 +661,54 @@ public class Listener implements org.bukkit.event.Listener {
 			}
 		    } else {
 			p.playSound(p.getLocation(), "zelda.midna.appear", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			Inventory inv = InventoryManager.createInventory(null, 9, "Shadow Crystal",
-				CustomInventoryType.SHADOW_CRYSTAL);
-			ShadowCrystalManager.populateShadowCrystal(inv, p);
+			ShadowCrystalManager manager = new ShadowCrystalManager(p);
+			p.openInventory(manager.getInventory());
+		    }
+		}
+	    } else if (nbt.getKeys().contains("BlockType")) {
+		if (nbt.getString("BlockType").equals("Campfire_Unlit")) {
+		    Block b = e.getClickedBlock();
+		    if (b != null) {
+			Block b2 = b.getRelative(e.getBlockFace());
+			Block b3 = b2.getRelative(BlockFace.UP);
+			if (b3.getType() != Material.AIR && b3.getType() != Material.VOID_AIR
+				&& b3.getType() != Material.CAVE_AIR && b3 != null)
+			    return;
+			new CustomBlock(b2, 0, BlockEnum.CAMP_UNLIT);
+			item.setAmount(item.getAmount() - 1);
+		    }
+
+		}
+	    } else if (item.getType() == Material.FLINT_AND_STEEL) {
+		Block b = e.getClickedBlock();
+		if (b != null) {
+		    NBTBlock nb = new NBTBlock(b);
+		    if (nb.getData().getKeys().contains("LinkedArmorStand")) {
+			String uuid = nb.getData().getString("LinkedArmorStand");
+			CustomBlock cb = CustomBlock.getCustomBlock(uuid);
+			cb.setItem(BlockEnum.CAMP_LIT);
+			cb.setLightLevel(15);
+			Damageable m = (Damageable) item.getItemMeta();
+			m.setDamage(m.getDamage() + 1);
+			if (m.getDamage() > 64) {
+			    item.setAmount(0);
+			} else {
+			    item.setItemMeta(m);
+			}
+			e.setCancelled(true);
+		    }
+		}
+	    } else if (item.getType() == Material.WATER_BUCKET) {
+		Block b = e.getClickedBlock();
+		if (b != null) {
+		    NBTBlock nb = new NBTBlock(b);
+		    if (nb.getData().getKeys().contains("LinkedArmorStand")) {
+			String uuid = nb.getData().getString("LinkedArmorStand");
+			CustomBlock cb = CustomBlock.getCustomBlock(uuid);
+			cb.setItem(BlockEnum.CAMP_UNLIT);
+			cb.setLightLevel(0);
+			item.setType(Material.BUCKET);
+			e.setCancelled(true);
 		    }
 		}
 	    }
@@ -784,13 +850,11 @@ public class Listener implements org.bukkit.event.Listener {
 	    } else {
 		Projectile proj = e.getEntity();
 
-		if (proj instanceof Arrow && proj.getPersistentDataContainer().has(
-			new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
-			PersistentDataType.STRING)) {
+		if (proj instanceof Arrow && proj.getPersistentDataContainer()
+			.has(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"), PersistentDataType.STRING)) {
 		    final Arrow arrow = (Arrow) proj;
 		    String string = (String) arrow.getPersistentDataContainer().get(
-			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
-			    PersistentDataType.STRING);
+			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"), PersistentDataType.STRING);
 		    DamageType dmgType = DamageType.valueOf(string);
 		    if (dmgType == DamageType.FIRE) {
 			Block block = e.getHitBlock();
@@ -1054,10 +1118,10 @@ public class Listener implements org.bukkit.event.Listener {
 	if (PData.getUuid() == null)
 	    PData.setUuid(p.getUniqueId().toString());
 	PData.register();
+	CustomBlock.initPlayer(p);
 	if (PData.getCurrentRace() == Race.NONE) {
-	    Inventory inv = InventoryManager.createInventory(null, 9, "Race", CustomInventoryType.RACE);
-	    RaceManager.populateRace(inv);
-	    p.openInventory(inv);
+	    RaceManager manager = new RaceManager();
+	    p.openInventory(manager.getInventory());
 	    PlayerData.applyAttributes(p, true);
 	} else {
 	    PlayerData.applyAttributes(p, false);
@@ -1083,18 +1147,33 @@ public class Listener implements org.bukkit.event.Listener {
     }
 
     @EventHandler
+    public void onEnchantPrepare(PrepareItemEnchantEvent e) {
+	ItemStack item = e.getItem();
+	if (item != null && item.getType() != Material.AIR) {
+	    NBTItem nbt = new NBTItem(item);
+	    if (nbt.getKeys().contains("ItemType")) {
+		e.setCancelled(true);
+	    }
+	}
+    }
+
+    @EventHandler
+    public void onSmithPrepare(PrepareAnvilEvent e) {
+	ItemStack item = e.getResult();
+	if (item != null && item.getType() != Material.AIR) {
+	    NBTItem nbt = new NBTItem(item);
+	    if (nbt.getKeys().contains("ItemType")) {
+		e.setResult(new ItemStack(Material.AIR));
+	    }
+	}
+    }
+
+    @EventHandler
     public void onPlayerClickInventory(InventoryClickEvent e) {
 	HumanEntity ent = e.getWhoClicked();
-	if (RaceManager.isRaceInventory(e.getInventory()) && ent instanceof Player) {
-	    RaceManager.handleClick(e);
-	} else if (RingManager.isRingInventory(e.getInventory()) && ent instanceof Player) {
-	    RingManager.handleClick(e);
-	} else if (ExchangeManager.isExchangeInventory(e.getInventory()) && ent instanceof Player) {
-	    ExchangeManager.handleClick(e);
-	} else if (ShadowCrystalManager.isShadowCrystal(e.getInventory()) && ent instanceof Player) {
-	    ShadowCrystalManager.handleClick(e);
-	} else if (StableManager.isStable(e.getInventory()) && ent instanceof Player) {
-	    StableManager.handleClick(e);
+	if (InventoryManager.isCustomInventory(e.getInventory()) && ent instanceof Player) {
+	    InventoryManager m = InventoryManager.getManager(e.getInventory());
+	    m.handleClick(e);
 	} else if (ent instanceof Player) {
 	    int slot = e.getSlot();
 	    ItemStack currItem = (e.getCurrentItem() == null) ? new ItemStack(Material.AIR) : e.getCurrentItem();
@@ -1102,19 +1181,19 @@ public class Listener implements org.bukkit.event.Listener {
 	    Player p = (Player) ent;
 	    PlayerData PData = PlayerData.getData(p);
 	    boolean shift = e.isShiftClick();
-	    if (PData.getCurrentRace() == Race.PIAF) {
-		if (e.getInventory().getType().equals(InventoryType.PLAYER)
-			|| e.getInventory().getType().equals(InventoryType.CRAFTING))
-		    if (slot == 38) {
-			e.setCancelled(true);
-		    }
-	    } else if (e.getInventory().getType().equals(InventoryType.PLAYER)
+	    if (e.getInventory().getType().equals(InventoryType.PLAYER)
 		    || e.getInventory().getType().equals(InventoryType.CRAFTING)) {
-		if (currItem.getType() == Material.AIR || chests.contains(currItem.getType())) {
-		    if (Material.ELYTRA == nextItem.getType() && slot == 38)
-			e.setCancelled(true);
-		} else if (shift && currItem.getType() == Material.ELYTRA && nextItem.getType() == Material.AIR) {
-		    e.setCancelled(true);
+		if (PData.getCurrentRace() == Race.PIAF) {
+		    if (slot == 38) {
+			e.setResult(Result.DENY);
+		    }
+		} else {
+		    if (currItem.getType() == Material.AIR || chests.contains(currItem.getType())) {
+			if (Material.ELYTRA == nextItem.getType() && slot == 38)
+			    e.setCancelled(true);
+		    } else if (shift && currItem.getType() == Material.ELYTRA && nextItem.getType() == Material.AIR) {
+			e.setResult(Result.DENY);
+		    }
 		}
 	    }
 	}
@@ -1231,14 +1310,9 @@ public class Listener implements org.bukkit.event.Listener {
 	ItemStack nextItem = (e.getOldCursor() == null) ? new ItemStack(Material.AIR) : e.getOldCursor();
 	ItemStack currItem = (e.getCursor() == null) ? new ItemStack(Material.AIR) : e.getCursor();
 	Set<Integer> slots = e.getInventorySlots();
-	if (e.getWhoClicked() instanceof Player && RaceManager.isRaceInventory(e.getInventory())) {
-	    RaceManager.handleDrag(e);
-	} else if (e.getWhoClicked() instanceof Player && RingManager.isRingInventory(e.getInventory())) {
-	    RingManager.handleDrag(e);
-	} else if (e.getWhoClicked() instanceof Player && ExchangeManager.isExchangeInventory(e.getInventory())) {
-	    ExchangeManager.handleDrag(e);
-	} else if (e.getWhoClicked() instanceof Player && ShadowCrystalManager.isShadowCrystal(e.getInventory())) {
-	    ShadowCrystalManager.handleDrag(e);
+	if (e.getWhoClicked() instanceof Player && InventoryManager.isCustomInventory(e.getInventory())) {
+	    InventoryManager m = InventoryManager.getManager(e.getInventory());
+	    m.handleDrag(e);
 	} else if (e.getWhoClicked() instanceof Player) {
 	    Player p = (Player) e.getWhoClicked();
 	    PlayerData PData = PlayerData.getData(p);
@@ -1270,13 +1344,10 @@ public class Listener implements org.bukkit.event.Listener {
     @EventHandler
     public void onInventoryClose(InventoryCloseEvent e) {
 	HumanEntity ent = e.getPlayer();
-	if (ent instanceof Player && RaceManager.isRaceInventory(e.getInventory())) {
-	    RaceManager.handleClose(e);
-	} else if (ent instanceof Player && RingManager.isRingInventory(e.getInventory())) {
-	    RingManager.handleClose(e);
-	} else if (ent instanceof Player && ShadowCrystalManager.isShadowCrystal(e.getInventory())) {
-	    ShadowCrystalManager.handleClose(e);
-	}
+	if (ent instanceof Player && InventoryManager.isCustomInventory(e.getInventory())) {
+	    InventoryManager m = InventoryManager.getManager(e.getInventory());
+	    m.handleClose(e);
+	} 
     }
 
     @EventHandler
@@ -1331,9 +1402,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    }
 	    if (damager instanceof Arrow) {
 		Arrow arrow = (Arrow) damager;
-		if (arrow.getPersistentDataContainer().has(
-			new NamespacedKey((Plugin) Main.getInstance(), "DamageType"), PersistentDataType.STRING)
-			&& ent instanceof org.bukkit.entity.Entity) {
+		if (arrow.getPersistentDataContainer().has(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
+			PersistentDataType.STRING) && ent instanceof org.bukkit.entity.Entity) {
 		    EntityDarkDamageByEntityEvent eventDark;
 		    EntityElectricDamageByEntityEvent eventElectric;
 		    EntityFireDamageByEntityEvent eventFire;
@@ -1341,8 +1411,7 @@ public class Listener implements org.bukkit.event.Listener {
 		    EntityLightDamageByEntityEvent eventLight;
 		    org.bukkit.entity.Entity shooter = (org.bukkit.entity.Entity) ent;
 		    String damageTypeString = (String) arrow.getPersistentDataContainer().get(
-			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
-			    PersistentDataType.STRING);
+			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"), PersistentDataType.STRING);
 		    DamageType damageType = DamageType.valueOf(damageTypeString);
 		    switch (damageType) {
 		    case DARK:
@@ -1677,28 +1746,23 @@ public class Listener implements org.bukkit.event.Listener {
 	    NBTItem nbt = new NBTItem(bow);
 	    if (nbt.getKeys().contains("ItemType"))
 		if (nbt.getString("ItemType").equals("Light_Bow")) {
-		    arrow.getPersistentDataContainer().set(
-			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
+		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.LIGHT.toString());
 		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		} else if (nbt.getString("ItemType").equals("Dark_Bow")) {
-		    arrow.getPersistentDataContainer().set(
-			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
+		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.DARK.toString());
 		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		} else if (nbt.getString("ItemType").equals("Ice_Bow")) {
-		    arrow.getPersistentDataContainer().set(
-			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
+		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.ICE.toString());
 		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		} else if (nbt.getString("ItemType").equals("Electric_Bow")) {
-		    arrow.getPersistentDataContainer().set(
-			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
+		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.ELECTRIC.toString());
 		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		} else if (nbt.getString("ItemType").equals("Fire_Bow")) {
-		    arrow.getPersistentDataContainer().set(
-			    new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
+		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.FIRE.toString());
 		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
 		}
@@ -1793,7 +1857,8 @@ public class Listener implements org.bukkit.event.Listener {
 	}
 	Material mat = block.getType();
 	ItemStack hand = e.getPlayer().getInventory().getItemInMainHand();
-	if (e.getPlayer().getGameMode() != GameMode.SURVIVAL) return;
+	if (e.getPlayer().getGameMode() != GameMode.SURVIVAL)
+	    return;
 	if (!hand.containsEnchantment(Enchantment.SILK_TOUCH) && (mat == Material.FERN || mat == Material.LARGE_FERN
 		|| mat == Material.GRASS || mat == Material.TALL_GRASS || mat == Material.DEAD_BUSH)) {
 	    if (!block.getMetadata("NoRupee").isEmpty()
@@ -1900,8 +1965,7 @@ public class Listener implements org.bukkit.event.Listener {
 	    if (mat == Material.FERN || mat == Material.LARGE_FERN || mat == Material.GRASS
 		    || mat == Material.TALL_GRASS || mat == Material.DEAD_BUSH)
 		state.getBlock().setMetadata("NoRupee",
-			(MetadataValue) new FixedMetadataValue((Plugin) Main.getInstance(),
-				Boolean.valueOf(true)));
+			(MetadataValue) new FixedMetadataValue((Plugin) Main.getInstance(), Boolean.valueOf(true)));
 	}
     }
 
@@ -1913,12 +1977,12 @@ public class Listener implements org.bukkit.event.Listener {
 	if (memory.hasStable() && memory.isMainNPC()) {
 	    StableMemory stable = memory.getStable();
 	    if (PData.hasDiscoveredStable(stable)) {
-		Inventory inv = InventoryManager.createInventory(null, 54, "Stable", CustomInventoryType.STABLE);
+		/*Inventory inv = InventoryManager.createInventory(null, 54, "Stable", CustomInventoryType.STABLE);
 		if (stable.isOwner(p)) {
 		    StableManager.populateStableOwnerMenu(inv, p, stable);
 		} else {
 		    StableManager.populateStableTeleport(inv, p, stable, 0);
-		}
+		}*/
 	    } else {
 		p.sendMessage("Discovered !");
 		PData.discoverStable(stable);
@@ -1991,5 +2055,75 @@ public class Listener implements org.bukkit.event.Listener {
 	    e.setCancelled(true);
 	}
 
+    }
+
+    @EventHandler
+    public void onPlayerCraft(CraftItemEvent e) {
+	ItemStack result = e.getRecipe().getResult();
+	Player p = (Player) e.getWhoClicked();
+	if (result.getType() != Material.AIR && result != null) {
+	    NBTItem nbt = new NBTItem(result);
+	    if (nbt.getKeys().contains("AntiStack") && e.getResult() == Result.ALLOW) {
+
+		if (e.isShiftClick()) {
+		    e.setCancelled(true);
+		    int max = 64;
+		    CraftingInventory inv = e.getInventory();
+		    for (ItemStack i : inv.getMatrix()) {
+			if (i != null && i.getType() != Material.AIR && i.getAmount() > 0)
+			    max = Math.min(i.getAmount(), max);
+		    }
+		    for (ItemStack i : inv.getMatrix()) {
+			if (i != null && i.getType() != Material.AIR && i.getAmount() > 0)
+			    i.setAmount(i.getAmount() - max);
+		    }
+		    inv.setResult(new ItemStack(Material.AIR));
+		    if (nbt.getKeys().contains("BlockType")) {
+			String s = nbt.getString("BlockType");
+			if (s.equals("Campfire_Unlit")) {
+			    for (int i = 0; i < max; i++) {
+				ItemStack t = BlockBuilder.build(BlockEnum.CAMP_UNLIT);
+				if (p.getInventory().firstEmpty() != -1)
+				    p.getInventory().addItem(t);
+				else
+				    p.getLocation().getWorld().dropItemNaturally(p.getLocation(), t);
+			    }
+			}
+		    }
+		} else if (e.getResult() == Result.ALLOW) {
+		    e.setCancelled(true);
+		    int max = 64;
+		    CraftingInventory inv = e.getInventory();
+		    for (ItemStack i : inv.getMatrix()) {
+			if (i != null && i.getType() != Material.AIR && i.getAmount() > 0)
+			    max = Math.min(i.getAmount(), max);
+		    }
+		    for (ItemStack i : inv.getMatrix()) {
+			if (i != null && i.getType() != Material.AIR && i.getAmount() > 0)
+			    i.setAmount(i.getAmount() - 1);
+		    }
+		    if (max == 1)
+			inv.setResult(new ItemStack(Material.AIR));
+		    if (nbt.getKeys().contains("BlockType")) {
+			String s = nbt.getString("BlockType");
+			if (s.equals("Campfire_Unlit")) {
+			    ItemStack t = BlockBuilder.build(BlockEnum.CAMP_UNLIT);
+			    if (p.getInventory().firstEmpty() != -1)
+				p.getInventory().addItem(t);
+			    else
+				p.getLocation().getWorld().dropItemNaturally(p.getLocation(), t);
+			}
+		    }
+		}
+	    }
+	}
+    }
+    
+    @EventHandler
+    public void onMobTarget(EntityTargetLivingEntityEvent e) {
+	if (!(e.getTarget() instanceof Player)) return;
+	Player p = (Player) e.getTarget();
+	PlayerData PData = PlayerData.getData(p);
+	if (!PData.isVisible()) e.setCancelled(true);
     }
 }
