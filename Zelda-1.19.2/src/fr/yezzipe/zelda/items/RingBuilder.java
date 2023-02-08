@@ -214,7 +214,7 @@ public class RingBuilder {
       meta.setLore(lore);
       ringItem.setItemMeta(meta);
       NBTItem nbt = new NBTItem(ringItem);
-      nbt.setString("ItemType", ring.toString());
+      nbt.setString("RingType", ring.toString());
       nbt.setString("AntiStack", UUID.randomUUID().toString());
       ringItem = nbt.getItem();
       return ringItem;
@@ -233,14 +233,14 @@ public class RingBuilder {
 	      values.add(c.toString());
 	      b++;
 	    } 
-	    if (nbt.getKeys().contains("ItemType") && 
-	      values.contains(nbt.getString("ItemType")))
+	    if (nbt.getKeys().contains("RingType") && 
+	      values.contains(nbt.getString("RingType")))
 	      return true; 
 	    return false;
 	  }
 
    public static Ring getRingFromItem(ItemStack item) {
       NBTItem nbt = new NBTItem(item);
-      return (Ring)Ring.valueOf(Ring.class, nbt.getString("ItemType"));
+      return (Ring)Ring.valueOf(Ring.class, nbt.getString("RingType"));
    }
 }

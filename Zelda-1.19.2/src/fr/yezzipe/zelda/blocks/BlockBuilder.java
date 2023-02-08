@@ -47,7 +47,7 @@ public class BlockBuilder {
 	}
 	return custom_item;
     }
-    
+
     public static void init() {
 	ItemStack camp_unlit_item = build(BlockEnum.CAMP_UNLIT);
 	ShapedRecipe camp_unlit = new ShapedRecipe(new NamespacedKey((Plugin) Main.getInstance(), "camp-unlit"),
@@ -55,7 +55,9 @@ public class BlockBuilder {
 	camp_unlit.shape(new String[] { " C ", "III", "WHW" });
 	camp_unlit.setIngredient('C', Material.CAULDRON);
 	camp_unlit.setIngredient('I', Material.IRON_INGOT);
-	RecipeChoice choice1 = new RecipeChoice.MaterialChoice(Material.OAK_LOG, Material.ACACIA_LOG, Material.BIRCH_LOG, Material.DARK_OAK_LOG, Material.JUNGLE_LOG, Material.MANGROVE_LOG, Material.SPRUCE_LOG);
+	RecipeChoice choice1 = new RecipeChoice.MaterialChoice(Material.OAK_LOG, Material.ACACIA_LOG,
+		Material.BIRCH_LOG, Material.DARK_OAK_LOG, Material.JUNGLE_LOG, Material.MANGROVE_LOG,
+		Material.SPRUCE_LOG);
 	camp_unlit.setIngredient('W', choice1);
 	RecipeChoice choice2 = new RecipeChoice.MaterialChoice(Material.COAL, Material.CHARCOAL);
 	camp_unlit.setIngredient('H', choice2);

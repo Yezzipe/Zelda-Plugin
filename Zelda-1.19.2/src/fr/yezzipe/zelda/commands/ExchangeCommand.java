@@ -7,15 +7,14 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class ExchangeCommand implements CommandExecutor {
-  public boolean onCommand(CommandSender arg0, Command arg1, String arg2, String[] arg3) {
-    if (arg0 instanceof Player) {
-      Player p = (Player)arg0;
-      ExchangeManager manager = new ExchangeManager();
-      p.openInventory(manager.getInventory());
-    } else {
-      arg0.sendMessage("You're not a Player.");
-    } 
-    return false;
-  }
+    public boolean onCommand(CommandSender arg0, Command arg1, String arg2, String[] arg3) {
+	if (arg0 instanceof Player) {
+	    Player p = (Player) arg0;
+	    ExchangeManager manager = new ExchangeManager();
+	    p.openInventory(manager.getInventory());
+	} else {
+	    arg0.sendMessage("You're not a Player.");
+	}
+	return false;
+    }
 }
-

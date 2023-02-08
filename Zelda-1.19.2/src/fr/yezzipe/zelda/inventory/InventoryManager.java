@@ -13,7 +13,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import fr.yezzipe.zelda.Registry;
 
-public class InventoryManager {
+public abstract class InventoryManager {
    
     protected UUID uuid;
     
@@ -46,9 +46,7 @@ public class InventoryManager {
 	return item;
     }
 
-    protected void populateInventory() {
-	return;
-    }
+    protected abstract void populateInventory();
     
     public UUID getUUID() {
 	return uuid;
@@ -71,17 +69,11 @@ public class InventoryManager {
 	return (T) registry.get(inv);
     }
     
-    public void handleClick(InventoryClickEvent e) {
-	return;
-    }
+    public abstract void handleClick(InventoryClickEvent e);
     
-    public void handleDrag(InventoryDragEvent e) {
-	return;
-    }
+    public abstract void handleDrag(InventoryDragEvent e);
     
-    public void handleClose(InventoryCloseEvent e) {
-	return;
-    }
+    public abstract void handleClose(InventoryCloseEvent e);
     
 
 }

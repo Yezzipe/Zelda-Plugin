@@ -14,18 +14,18 @@ public class PacketManager {
     public static <T> void sendPacket(Player player, T packet) {
 	if (packet instanceof Packet) {
 	    PlayerConnection conn = (((CraftPlayer) player).getHandle()).b;
-	    conn.a((Packet<?>)packet);
+	    conn.a((Packet<?>) packet);
 	}
     }
-    
+
     public static <T> void sendPacketToAll(T packet) {
 	if (packet instanceof Packet) {
-	    for(Player player : Bukkit.getOnlinePlayers()) {
+	    for (Player player : Bukkit.getOnlinePlayers()) {
 		sendPacket(player, packet);
 	    }
 	}
     }
-    
+
     public static byte getMetaData(Entity entity, byte mask) {
 	byte b = 0;
 	if (entity instanceof Player) {

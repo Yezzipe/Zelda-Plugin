@@ -36,17 +36,17 @@ import net.minecraft.world.entity.decoration.EntityArmorStand;
 
 public class CustomBlock {
     private transient EntityArmorStand as;
-    
+
     private transient ItemStack item;
-    
+
     private BlockEnum b;
 
     private String uuid;
 
     private transient Block block;
-    
+
     private transient Block light;
-    
+
     private int lightLevel;
 
     private CustomBlockMemory blockMemory;
@@ -54,7 +54,7 @@ public class CustomBlock {
     private CustomBlockMemory lightMemory;
 
     private static Registry<UUID, CustomBlock> registry = new Registry<UUID, CustomBlock>();
-    
+
     private static String folderPrefix = "blocks/";
 
     public CustomBlock(Block block, int lightLevel, BlockEnum b) {
@@ -80,9 +80,9 @@ public class CustomBlock {
 	registry.bind(getUUID(), this);
 	nbt2.getData().setString("LinkedArmorStand", uuid.toString());
 	setItem(b);
-	
+
     }
-    
+
     public UUID getUUID() {
 	return UUID.fromString(uuid);
     }
@@ -98,7 +98,7 @@ public class CustomBlock {
 	PacketManager.sendPacketToAll(packet);
 	this.item = item;
     }
-    
+
     public void setLightLevel(int l) {
 	Levelled level = (Levelled) light.getBlockData();
 	level.setLevel(l);
@@ -132,7 +132,7 @@ public class CustomBlock {
     public static CustomBlock getCustomBlock(String uuid) {
 	return getCustomBlock(UUID.fromString(uuid));
     }
-    
+
     public void sendToPlayer(Player player) {
 	PacketPlayOutSpawnEntity packet1 = new PacketPlayOutSpawnEntity(as);
 	PacketManager.sendPacket(player, packet1);
@@ -147,14 +147,14 @@ public class CustomBlock {
 	PacketPlayOutEntityEquipment packet = new PacketPlayOutEntityEquipment(as.ae(), list);
 	PacketManager.sendPacket(player, packet);
     }
-    
+
     public static void initPlayer(Player player) {
 	Set<UUID> uuids = registry.keys();
 	for (UUID uuid : uuids) {
 	    getCustomBlock(uuid).sendToPlayer(player);
 	}
     }
-    
+
     public static void saveAll() {
 	Set<UUID> uuids = registry.keys();
 	Main.write(String.valueOf(folderPrefix) + "list", uuids);
@@ -162,7 +162,7 @@ public class CustomBlock {
 	    getCustomBlock(uuid).save();
 	}
     }
-    
+
     public void save() {
 	this.blockMemory = new CustomBlockMemory(block);
 	this.lightMemory = new CustomBlockMemory(light);
@@ -171,18 +171,21 @@ public class CustomBlock {
 	PacketManager.sendPacketToAll(packet);
 	as = null;
     }
-    
+
     public static void initAll() {
-	if (!Main.exist(String.valueOf(folderPrefix) + "list")) return;
-	Type list = (new TypeToken<Set<UUID>>() {}).getType();
-	Type type = (new TypeToken<CustomBlock>() {}).getType();
+	if (!Main.exist(String.valueOf(folderPrefix) + "list"))
+	    return;
+	Type list = (new TypeToken<Set<UUID>>() {
+	}).getType();
+	Type type = (new TypeToken<CustomBlock>() {
+	}).getType();
 	Set<UUID> uuids = Main.read(folderPrefix + "list", list);
 	for (UUID uuid : uuids) {
-	    CustomBlock cb =  Main.read(folderPrefix + uuid.toString(), type);
+	    CustomBlock cb = Main.read(folderPrefix + uuid.toString(), type);
 	    cb.init();
 	}
     }
-    
+
     public void init() {
 	this.block = blockMemory.getBlock();
 	this.light = lightMemory.getBlock();

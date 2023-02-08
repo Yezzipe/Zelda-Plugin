@@ -22,7 +22,7 @@ public class DropBuilder {
         meta.setDisplayName("§cHeart");
         heart.setItemMeta(meta);
         nbt = new NBTItem(heart);
-        nbt.setString("ItemType", "Heart");
+        nbt.setString("DropType", Drop.HEART.toString());
         nbt.setString("AntiStack", UUID.randomUUID().toString());
         customItem = nbt.getItem();
         break;

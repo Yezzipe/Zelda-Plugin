@@ -23,20 +23,21 @@ import fr.yezzipe.zelda.events.ModifierCalculator;
 import fr.yezzipe.zelda.events.RightClickNPCEvent;
 import fr.yezzipe.zelda.events.enums.DamageType;
 import fr.yezzipe.zelda.inventory.InventoryManager;
-import fr.yezzipe.zelda.inventory.RaceManager;
-import fr.yezzipe.zelda.inventory.ShadowCrystalManager;
+import fr.yezzipe.zelda.inventory.RaceInventoryManager;
 import fr.yezzipe.zelda.items.DropBuilder;
+import fr.yezzipe.zelda.items.GrapplingHookManager;
+import fr.yezzipe.zelda.items.HeartContainerManager;
 import fr.yezzipe.zelda.items.ItemBuilder;
 import fr.yezzipe.zelda.items.ItemTable;
 import fr.yezzipe.zelda.items.RingBuilder;
 import fr.yezzipe.zelda.items.RingCalculator;
 import fr.yezzipe.zelda.items.RupeeBuilder;
+import fr.yezzipe.zelda.items.ShadowCrystalManager;
 import fr.yezzipe.zelda.items.enums.Drop;
 import fr.yezzipe.zelda.items.enums.Item;
 import fr.yezzipe.zelda.items.enums.Ring;
 import fr.yezzipe.zelda.items.enums.Rupees;
 import fr.yezzipe.zelda.territory.TerritoryChunk;
-import fr.yezzipe.zelda.territory.Waypoint;
 import fr.yezzipe.zelda.territory.structures.StableMemory;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,15 +45,10 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.PacketPlayOutAnimation;
-import net.minecraft.network.protocol.game.PacketPlayOutAttachEntity;
-import net.minecraft.world.entity.Entity;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
@@ -68,8 +64,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.MultipleFacing;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_19_R1.entity.CraftPlayer;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
@@ -77,7 +71,6 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
-import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Result;
@@ -123,7 +116,6 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.LootGenerateEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
@@ -137,7 +129,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 public class Listener implements org.bukkit.event.Listener {
@@ -145,13 +136,13 @@ public class Listener implements org.bukkit.event.Listener {
 	    new Material[] { Material.NETHERITE_CHESTPLATE, Material.DIAMOND_CHESTPLATE, Material.GOLDEN_CHESTPLATE,
 		    Material.IRON_CHESTPLATE, Material.CHAINMAIL_CHESTPLATE, Material.LEATHER_CHESTPLATE });
 
-    public static HashMap<String, Arrow> hooks = new HashMap<>();
+    // public static HashMap<String, Arrow> hooks = new HashMap<>();
 
     public static Collection<Location> disableLightning = new ArrayList<>();
 
-    public static HashMap<Player, BukkitTask> grapplingExtend = new HashMap<>();
+    // public static HashMap<Player, BukkitTask> grapplingExtend = new HashMap<>();
 
-    public static HashMap<Player, BukkitTask> grapplingRetract = new HashMap<>();
+    // public static HashMap<Player, BukkitTask> grapplingRetract = new HashMap<>();
 
     public static HashMap<Player, Boolean> chargingNPCs = new HashMap<>();
 
@@ -263,29 +254,11 @@ public class Listener implements org.bukkit.event.Listener {
     public void onItemDrop(PlayerDropItemEvent e) {
 	ItemStack item = e.getItemDrop().getItemStack();
 	Player p = e.getPlayer();
-	PlayerData PData = PlayerData.getData(p);
 	NBTItem nbt = new NBTItem(item);
-	if (nbt.getKeys().contains("ItemType") && nbt.getString("ItemType").equals("Grappling")) {
-	    if (hooks.get(p.getName()) != null) {
-		Arrow prevArr = hooks.get(p.getName());
-		if (grapplingExtend.get(p) != null) {
-		    grapplingExtend.remove(p);
-		    p.stopSound("zelda.clawshot.extend", SoundCategory.PLAYERS);
-		}
-		if (grapplingRetract.get(p) != null) {
-		    grapplingRetract.remove(p);
-		    p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-		}
-		p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-		for (org.bukkit.entity.Entity ents : prevArr.getPassengers())
-		    ents.remove();
-		prevArr.remove();
-		hooks.remove(p.getName());
-	    }
-	    if (PData.isAttachedToWall()) {
-		PData.detachFromWall();
-		p.setGravity(true);
-	    }
+	if (nbt.getKeys().contains("ItemType") && nbt.getString("ItemType").equals(Item.GRAPPLING_HOOK.toString())) {
+	    GrapplingHookManager manager = GrapplingHookManager.getFromPlayer(p);
+	    if (manager != null)
+		manager.cleanArrow();
 	}
     }
 
@@ -293,7 +266,7 @@ public class Listener implements org.bukkit.event.Listener {
     public void onItemMove(InventoryMoveItemEvent e) {
 	ItemStack item = e.getItem();
 	NBTItem nbt = new NBTItem(item);
-	if (nbt.getKeys().contains("ItemType") && nbt.getString("ItemType").equals("Heart")) {
+	if (nbt.getKeys().contains("DropType") && nbt.getString("DropType").equals(Drop.HEART.toString())) {
 	    item.setAmount(0);
 	    e.setItem(item);
 	}
@@ -304,7 +277,7 @@ public class Listener implements org.bukkit.event.Listener {
 	if (e.getInventory().getType().equals(InventoryType.HOPPER)) {
 	    ItemStack item = e.getItem().getItemStack();
 	    NBTItem nbt = new NBTItem(item);
-	    if (nbt.getKeys().contains("ItemType") && nbt.getString("ItemType").equals("Heart")) {
+	    if (nbt.getKeys().contains("DropType") && nbt.getString("DropType").equals(Drop.HEART.toString())) {
 		e.setCancelled(true);
 		e.getItem().remove();
 	    }
@@ -423,8 +396,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    PlayerData PData = PlayerData.getData(p);
 	    ItemStack item = e.getItem().getItemStack();
 	    NBTItem nbt = new NBTItem(item);
-	    if (nbt.getKeys().contains("ItemType"))
-		if (nbt.getString("ItemType").equals("Heart")) {
+	    if (nbt.getKeys().contains("DropType")) {
+		if (nbt.getString("DropType").equals(Drop.HEART.toString())) {
 		    e.setCancelled(true);
 		    e.getItem().remove();
 		    double health = (p.getHealth() + 2.0D > p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue())
@@ -433,237 +406,60 @@ public class Listener implements org.bukkit.event.Listener {
 		    p.setHealth(health);
 		    PData.setHealth(health);
 		    p.playSound(p.getLocation(), "zelda.heart.get", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-		} else if (nbt.getString("ItemType").equals("Green_Rupee")) {
+		}
+	    } else if (nbt.getKeys().contains("RupeeType")) {
+		if (nbt.getString("RupeeType").equals(Rupees.GREEN.toString())) {
 		    p.playSound(p.getLocation(), "zelda.rupee.get_green", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-		} else if (nbt.getString("ItemType").equals("Blue_Rupee")) {
+		} else if (nbt.getString("RupeeType").equals(Rupees.BLUE.toString())) {
 		    p.playSound(p.getLocation(), "zelda.rupee.get_blue", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-		} else if (nbt.getString("ItemType").equals("Yellow_Rupee")
-			|| nbt.getString("ItemType").equals("Red_Rupee")
-			|| nbt.getString("ItemType").equals("Purple_Rupee")
-			|| nbt.getString("ItemType").equals("Silver_Rupee")
-			|| nbt.getString("ItemType").equals("Gold_Rupee")) {
+		} else if (nbt.getString("RupeeType").equals(Rupees.YELLOW.toString())
+			|| nbt.getString("RupeeType").equals(Rupees.RED.toString())
+			|| nbt.getString("RupeeType").equals(Rupees.PURPLE.toString())
+			|| nbt.getString("RupeeType").equals(Rupees.SILVER.toString())
+			|| nbt.getString("RupeeType").equals(Rupees.GOLD.toString())) {
 		    p.playSound(p.getLocation(), "zelda.rupee.get_yellow", SoundCategory.PLAYERS, 1000.0F, 1.0F);
 		}
+	    }
+
 	}
     }
 
     @EventHandler
     public void onClick(PlayerInteractEvent e) {
-	final Player p = e.getPlayer();
-	final PlayerData PData = PlayerData.getData(p);
-	if (e.getHand() == EquipmentSlot.OFF_HAND) {
-	    ItemStack item = p.getInventory().getItemInOffHand();
-	    if (item == null || item.getType() == Material.AIR)
-		return;
-	    if (chests.contains(item.getType())) {
-		if ((e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
-			&& PData.getCurrentRace() == Race.PIAF)
-		    e.setCancelled(true);
-	    } else if (item.getType() == Material.ELYTRA
-		    && (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
-		    && PData.getCurrentRace() != Race.PIAF) {
-		e.setCancelled(true);
-	    }
-	} else if (e.getHand() == EquipmentSlot.HAND) {
-	    ItemStack item = p.getInventory().getItemInMainHand();
-	    if (item == null || item.getType() == Material.AIR) {
-		if (e.getClickedBlock() != null) {
-		    Block b = e.getClickedBlock();
-		    NBTBlock nbt2 = new NBTBlock(b);
-		    if (nbt2.getData().getKeys().contains("LinkedArmorStand")) {
-			if (p.isSneaking()) {
-			    String uuid = nbt2.getData().getString("LinkedArmorStand");
-			    CustomBlock cb = CustomBlock.getCustomBlock(uuid);
-			    cb.remove();
-			    p.getInventory().addItem(BlockBuilder.build(BlockEnum.CAMP_UNLIT));
-			} else
-			    p.sendMessage("not sneaking");
-		    }
-		}
-		return;
-	    }
+	ItemStack item = e.getItem();
+	Player p = e.getPlayer();
+	PlayerData PData = PlayerData.getData(p);
+	if (item != null && item.getType() != Material.AIR) {
 	    NBTItem nbt = new NBTItem(item);
-	    if (chests.contains(item.getType())) {
-		if ((e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
-			&& PData.getCurrentRace() == Race.PIAF)
-		    e.setCancelled(true);
-	    } else if (item.getType() == Material.ELYTRA) {
-		if ((e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
-			&& PData.getCurrentRace() != Race.PIAF)
-		    e.setCancelled(true);
-	    } else if (nbt.getKeys().contains("ItemType")) {
-		if (nbt.getString("ItemType").equals("Grappling") && PData.getCurrentRace() != Race.GORON) {
-		    if (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK) {
-			e.setCancelled(true);
-			if (hooks.get(p.getName()) != null) {
-			    Arrow prevArr = hooks.get(p.getName());
-			    for (org.bukkit.entity.Entity ents : prevArr.getPassengers())
-				ents.remove();
-			    prevArr.remove();
-			}
-			if (PData.isAttachedToWall()) {
-			    PData.detachFromWall();
-			    p.setGravity(true);
-			}
-			p.playSound(p.getLocation(), "zelda.clawshot.fire", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			Arrow arrow = (Arrow) p.launchProjectile(Arrow.class);
-			arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-			hooks.put(p.getName(), arrow);
-			Rabbit rabbit = (Rabbit) p.getWorld().spawn(p.getLocation(), Rabbit.class);
-			rabbit.setBaby();
-			arrow.addPassenger((org.bukkit.entity.Entity) rabbit);
-			arrow.setPersistent(true);
-			rabbit.setAI(false);
-			rabbit.setCollidable(false);
-			rabbit.setGravity(false);
-			rabbit.setSilent(true);
-			rabbit.setVisualFire(false);
-			EntityManager.noCollisionHandler.addEntity(rabbit.getUniqueId());
-			rabbit.setInvisible(true);
-			rabbit.setInvulnerable(true);
-			CraftEntity Cent = (CraftEntity) rabbit;
-			Entity ent = Cent.getHandle();
-			PacketPlayOutAnimation packet1 = new PacketPlayOutAnimation(
-				(Entity) ((CraftPlayer) p).getHandle(), 0);
-			PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent,
-				(Entity) ((CraftPlayer) p).getHandle());
-			Collection<? extends Player> players = Bukkit.getServer().getOnlinePlayers();
-			(((CraftPlayer) p).getHandle()).b.a((Packet<?>) packet1);
-			for (Player player : players)
-			    (((CraftPlayer) player).getHandle()).b.a((Packet<?>) packet);
-			PData.setNoLeftClickHook(true);
-			(new BukkitRunnable() {
-			    public void run() {
-				PData.setNoLeftClickHook(false);
-			    }
-			}).runTaskLater((Plugin) Main.getInstance(), 5L);
-			BukkitTask runnable = (new BukkitRunnable() {
-			    public void run() {
-				if (Listener.grapplingExtend.get(p) == null) {
-				    cancel();
-				    return;
-				}
-				if (((BukkitTask) Listener.grapplingExtend.get(p)).getTaskId() == getTaskId()) {
-				    p.playSound(p.getLocation(), "zelda.clawshot.extend", SoundCategory.PLAYERS,
-					    1000.0F, 1.0F);
-				} else {
-				    cancel();
-				}
-			    }
-			}).runTaskTimerAsynchronously((Plugin) Main.getInstance(), 0L, 13L);
-			grapplingExtend.put(p, runnable);
-		    } else if (e.getAction() == Action.LEFT_CLICK_BLOCK) {
-			e.setCancelled(true);
-			if (hooks.get(p.getName()) != null) {
-			    Arrow prevArr = hooks.get(p.getName());
-			    if (grapplingExtend.get(p) != null) {
-				grapplingExtend.remove(p);
-				p.stopSound("zelda.clawshot.extend", SoundCategory.PLAYERS);
-			    }
-			    if (grapplingRetract.get(p) != null) {
-				grapplingRetract.remove(p);
-				p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-			    }
-			    p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			    for (org.bukkit.entity.Entity ents : prevArr.getPassengers())
-				ents.remove();
-			    prevArr.remove();
-			    hooks.remove(p.getName());
-			}
-			if (PData.isAttachedToWall()) {
-			    PData.detachFromWall();
-			    p.setGravity(true);
-			}
-		    } else if (e.getAction() == Action.LEFT_CLICK_AIR && !PData.isNoLeftClickHook()) {
-			e.setCancelled(true);
-			if (hooks.get(p.getName()) != null) {
-			    Arrow prevArr = hooks.get(p.getName());
-			    if (grapplingExtend.get(p) != null) {
-				grapplingExtend.remove(p);
-				p.stopSound("zelda.clawshot.extend", SoundCategory.PLAYERS);
-			    }
-			    if (grapplingRetract.get(p) != null) {
-				grapplingRetract.remove(p);
-				p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-			    }
-			    p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			    for (org.bukkit.entity.Entity ents : prevArr.getPassengers())
-				ents.remove();
-			    prevArr.remove();
-			    hooks.remove(p.getName());
-			}
-			if (PData.isAttachedToWall()) {
-			    PData.detachFromWall();
-			    p.setGravity(true);
-			}
-		    }
-		} else if (nbt.getString("ItemType").equals("Heart_Container")) {
-		    e.setCancelled(true);
-		    int bonusHealth = PData.getBonusHealth();
-		    final double lastKnownHealth = p.getHealth();
-		    if (bonusHealth + 1 > 10)
-			return;
-		    PData.setBonusHealth(bonusHealth + 1);
-		    PlayerData.applyAttributes(p, false);
-		    e.getItem().setAmount(e.getItem().getAmount() - 1);
-		    (new BukkitRunnable() {
-			public void run() {
-			    if (p.isDead()) {
-				PData.setHealth(lastKnownHealth);
-				cancel();
-				return;
-			    }
-			    if (!p.isOnline()) {
-				PData.setHealth(lastKnownHealth);
-				cancel();
-				return;
-			    }
-			    double currentHealth = p.getHealth();
-			    if (currentHealth == p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()) {
-				PData.setHealth(currentHealth);
-				cancel();
-				return;
-			    }
-			    if (currentHealth + 2.0D > p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue()) {
-				p.setHealth(p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
-				p.playSound(p.getLocation(), "zelda.heart.get", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			    } else {
-				p.setHealth(currentHealth + 2.0D);
-				p.playSound(p.getLocation(), "zelda.heart.get", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			    }
-			}
-		    }).runTaskTimerAsynchronously((Plugin) Main.getInstance(), 0L, 5L);
-		} else if (nbt.getString("ItemType").equals("Shadow_Crystal")) {
-		    e.setCancelled(true);
-		    if (p.isSneaking()) {
-			List<Waypoint> waypoints = PData.getWaypoints();
-			if (waypoints != null) {
-			    if (waypoints.size() < 3) {
-				Waypoint waypoint = new Waypoint(p.getLocation());
-				waypoints.add(waypoint);
-				PData.setWaypoints(waypoints);
-				Random rand = new Random();
-				int randomElement = rand.nextInt(2) + 1;
-				p.playSound(p.getLocation(), "zelda.midna.mmm." + Integer.toString(randomElement),
-					SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			    } else {
-				p.playSound(p.getLocation(), "zelda.midna.hey", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			    }
-			} else {
-			    waypoints = new ArrayList<>();
-			    Waypoint waypoint = new Waypoint(p.getLocation());
-			    waypoints.add(waypoint);
-			    PData.setWaypoints(waypoints);
-			    Random rand = new Random();
-			    int randomElement = rand.nextInt(2) + 1;
-			    p.playSound(p.getLocation(), "zelda.midna.mmm." + Integer.toString(randomElement),
-				    SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			}
-		    } else {
-			p.playSound(p.getLocation(), "zelda.midna.appear", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			ShadowCrystalManager manager = new ShadowCrystalManager(p);
-			p.openInventory(manager.getInventory());
-		    }
+	    if (nbt.getKeys().contains("ItemType")) {
+		Item type = Item.valueOf(nbt.getString("ItemType"));
+		switch (type) {
+		case BOMB_BOW:
+		    break;
+		case DARK_BOW:
+		    break;
+		case ELECTRIC_BOW:
+		    break;
+		case FIRE_BOW:
+		    break;
+		case GRAPPLING_HOOK:
+		    new GrapplingHookManager(e);
+		    break;
+		case HEART_CONTAINER:
+		    new HeartContainerManager(e);
+		    break;
+		case HEART_PIECE:
+		    break;
+		case ICE_BOW:
+		    break;
+		case LIGHT_BOW:
+		    break;
+		case SHADOW_CRYSTAL:
+		    new ShadowCrystalManager(e);
+		    break;
+		default:
+		    break;
+
 		}
 	    } else if (nbt.getKeys().contains("BlockType")) {
 		if (nbt.getString("BlockType").equals("Campfire_Unlit")) {
@@ -679,7 +475,15 @@ public class Listener implements org.bukkit.event.Listener {
 		    }
 
 		}
-	    } else if (item.getType() == Material.FLINT_AND_STEEL) {
+	    } else if (chests.contains(item.getType())) {
+		if ((e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
+			&& PData.getCurrentRace() == Race.PIAF)
+		    e.setCancelled(true);
+	    } else if (item.getType() == Material.ELYTRA
+		    && (e.getAction() == Action.RIGHT_CLICK_AIR || e.getAction() == Action.RIGHT_CLICK_BLOCK)
+		    && PData.getCurrentRace() != Race.PIAF) {
+		e.setCancelled(true);
+	    } else if (item.getType() == Material.FLINT_AND_STEEL && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
 		Block b = e.getClickedBlock();
 		if (b != null) {
 		    NBTBlock nb = new NBTBlock(b);
@@ -698,7 +502,7 @@ public class Listener implements org.bukkit.event.Listener {
 			e.setCancelled(true);
 		    }
 		}
-	    } else if (item.getType() == Material.WATER_BUCKET) {
+	    } else if (item.getType() == Material.WATER_BUCKET && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
 		Block b = e.getClickedBlock();
 		if (b != null) {
 		    NBTBlock nb = new NBTBlock(b);
@@ -712,144 +516,34 @@ public class Listener implements org.bukkit.event.Listener {
 		    }
 		}
 	    }
+	} else if (e.getHand() == EquipmentSlot.HAND) {
+	    if (e.getClickedBlock() != null && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+		Block b = e.getClickedBlock();
+		NBTBlock nbt2 = new NBTBlock(b);
+		if (nbt2.getData().getKeys().contains("LinkedArmorStand")) {
+		    if (p.isSneaking()) {
+			String uuid = nbt2.getData().getString("LinkedArmorStand");
+			CustomBlock cb = CustomBlock.getCustomBlock(uuid);
+			cb.remove();
+			p.getInventory().addItem(BlockBuilder.build(BlockEnum.CAMP_UNLIT));
+		    } else
+			p.sendMessage("not sneaking");
+		}
+	    }
 	}
     }
 
-    static Collection<Player> glideCanceled = new ArrayList<>();
+    public static Collection<Player> glideCanceled = new ArrayList<>();
 
     @EventHandler
     public void onProjectileLand(final ProjectileHitEvent e) {
 	if (e.getHitBlock() != null) {
-	    boolean isGrap = false;
-	    List<org.bukkit.entity.Entity> passengers = e.getEntity().getPassengers();
-	    if (passengers.size() > 0)
-		isGrap = true;
+	    boolean isGrap = GrapplingHookManager.isHook(e.getEntity());
 	    if (isGrap) {
-		ProjectileSource source = e.getEntity().getShooter();
-		if (source instanceof Player) {
-		    final Player p = (Player) source;
-		    final PlayerData PData = PlayerData.getData(p);
-		    if (grapplingExtend.get(p) != null) {
-			grapplingExtend.remove(p);
-			p.stopSound("zelda.clawshot.extend", SoundCategory.PLAYERS);
-		    }
-		    BukkitTask runnable = (new BukkitRunnable() {
-			public void run() {
-			    if (Listener.grapplingRetract.get(p) == null) {
-				cancel();
-				return;
-			    }
-			    if (((BukkitTask) Listener.grapplingRetract.get(p)).getTaskId() == getTaskId()) {
-				p.playSound(p.getLocation(), "zelda.clawshot.retract", SoundCategory.PLAYERS, 1000.0F,
-					1.0F);
-			    } else {
-				cancel();
-			    }
-			}
-		    }).runTaskTimerAsynchronously((Plugin) Main.getInstance(), 0L, 6L);
-		    grapplingRetract.put(p, runnable);
-		    glideCanceled.add(p);
-		    p.setGliding(true);
-		    (new BukkitRunnable() {
-			Location prevLoc = null;
-
-			Location prevLoc2 = null;
-
-			Location prevLoc3 = null;
-
-			boolean hasAttached = false;
-
-			public void run() {
-			    if (!e.getEntity().isValid()) {
-				cancel();
-				Listener.glideCanceled.remove(p);
-				p.setGliding(false);
-				if (PData.isAttachedToWall()) {
-				    PData.detachFromWall();
-				    p.setGravity(true);
-				}
-				return;
-			    }
-			    if (Listener.hooks.get(p.getName()) == null) {
-				cancel();
-				Listener.glideCanceled.remove(p);
-				p.setGliding(false);
-				return;
-			    }
-			    if (Listener.hooks.get(p.getName()) != e.getEntity()) {
-				cancel();
-				Listener.glideCanceled.remove(p);
-				p.setGliding(false);
-				return;
-			    }
-			    e.getEntity().setTicksLived(1);
-			    Location loc1 = e.getEntity().getLocation();
-			    Location loc2 = p.getLocation();
-			    double dX = loc2.getX() - loc1.getX();
-			    double dY = loc2.getY() - loc1.getY();
-			    double dZ = loc2.getZ() - loc1.getZ();
-			    double yaw = Math.atan2(dZ, dX);
-			    double pitch = Math.atan2(Math.sqrt(dZ * dZ + dX * dX), dY) + Math.PI;
-			    double X = Math.sin(pitch) * Math.cos(yaw);
-			    double Y = Math.sin(pitch) * Math.sin(yaw);
-			    double Z = Math.cos(pitch);
-			    Vector vector = new Vector(X, Z, Y);
-			    Vector v = new Vector(-dX, -dY, -dZ);
-			    if (this.prevLoc3 != null && !PData.isAttachedToWall()) {
-				Vector v2 = new Vector(this.prevLoc3.getX() - loc2.getX(),
-					this.prevLoc3.getY() - loc2.getY(), this.prevLoc3.getZ() - loc2.getZ());
-				if (v2.length() <= 0.1D) {
-				    List<org.bukkit.entity.Entity> passengers = e.getEntity().getPassengers();
-				    for (org.bukkit.entity.Entity entity : passengers)
-					entity.remove();
-				    e.getEntity().remove();
-				    Listener.hooks.remove(p.getName());
-				    cancel();
-				    Listener.glideCanceled.remove(p);
-				    if (Listener.grapplingRetract.get(p) != null) {
-					Listener.grapplingRetract.remove(p);
-					p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-				    }
-				    p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS, 1000.0F,
-					    1.0F);
-				    p.setGliding(false);
-				    p.setVelocity(new Vector(0, 0, 0));
-				} else if (v.length() > 1.0D && !PData.isAttachedToWall()) {
-				    p.setVelocity(vector);
-				} else if (!this.hasAttached) {
-				    Listener.glideCanceled.remove(p);
-				    if (Listener.grapplingRetract.get(p) != null) {
-					Listener.grapplingRetract.remove(p);
-					p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-				    }
-				    p.setGliding(false);
-				    p.setVelocity(new Vector(0, 0, 0));
-				    this.hasAttached = true;
-				    PData.attachToWall();
-				    ;
-				}
-			    } else if (v.length() > 1.0D && !PData.isAttachedToWall()) {
-				p.setVelocity(vector);
-			    } else if (!this.hasAttached) {
-				this.hasAttached = true;
-				PData.attachToWall();
-				p.setGliding(false);
-				p.setVelocity(new Vector(0, 0, 0));
-				Listener.glideCanceled.remove(p);
-				if (Listener.grapplingRetract.get(p) != null) {
-				    Listener.grapplingRetract.remove(p);
-				    p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-				}
-			    }
-			    this.prevLoc3 = this.prevLoc2;
-			    this.prevLoc2 = this.prevLoc;
-			    this.prevLoc = loc2;
-			}
-		    }).runTaskTimer((Plugin) Main.getInstance(), 0L, 2L);
-		}
+		GrapplingHookManager manager = GrapplingHookManager.getFromArrow((Arrow) e.getEntity());
+		manager.retractBlock();
 	    } else {
 		Projectile proj = e.getEntity();
-
 		if (proj instanceof Arrow && proj.getPersistentDataContainer()
 			.has(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"), PersistentDataType.STRING)) {
 		    final Arrow arrow = (Arrow) proj;
@@ -896,148 +590,18 @@ public class Listener implements org.bukkit.event.Listener {
 				Listener.disableLightning.remove(arrow.getLocation());
 			    }
 			}).runTaskLaterAsynchronously((Plugin) Main.getInstance(), 40L);
+		    } else if (dmgType == DamageType.BOMB) {
+			Location loc = arrow.getLocation();
+			loc.getWorld().createExplosion(loc, 4, false, false);
 		    }
 		}
 	    }
 	} else if (e.getHitEntity() != null) {
-	    List<org.bukkit.entity.Entity> passengers = e.getEntity().getPassengers();
-	    boolean isGrap = false;
-	    for (org.bukkit.entity.Entity entity : passengers) {
-		isGrap = true;
-		entity.remove();
-	    }
+	    boolean isGrap = GrapplingHookManager.isHook(e.getEntity());
 	    if (isGrap) {
-		ProjectileSource source = e.getEntity().getShooter();
-		if (source instanceof Player) {
-		    final Player p = (Player) source;
-		    if (grapplingExtend.get(p) != null) {
-			grapplingExtend.remove(p);
-			p.stopSound("zelda.clawshot.extend", SoundCategory.PLAYERS);
-		    }
-		    BukkitTask runnable = (new BukkitRunnable() {
-			public void run() {
-			    if (Listener.grapplingRetract.get(p) == null) {
-				cancel();
-				return;
-			    }
-			    if (((BukkitTask) Listener.grapplingRetract.get(p)).getTaskId() == getTaskId()) {
-				p.playSound(p.getLocation(), "zelda.clawshot.retract", SoundCategory.PLAYERS, 1000.0F,
-					1.0F);
-			    } else {
-				cancel();
-			    }
-			}
-		    }).runTaskTimerAsynchronously((Plugin) Main.getInstance(), 0L, 6L);
-		    grapplingRetract.put(p, runnable);
-		    e.setCancelled(true);
-		    e.getEntity().remove();
-		    if (e.getHitEntity() instanceof Player) {
-			Player otherP = (Player) e.getHitEntity();
-			PlayerData PData2 = PlayerData.getData(otherP);
-			if (PData2.getCurrentRace() == Race.GORON)
-			    return;
-		    }
-		    CraftEntity Cent = (CraftEntity) e.getHitEntity();
-		    final Entity ent = Cent.getHandle();
-		    PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent,
-			    (Entity) ((CraftPlayer) p).getHandle());
-		    Collection<? extends Player> players = Bukkit.getServer().getOnlinePlayers();
-		    for (Player player : players)
-			(((CraftPlayer) player).getHandle()).b.a((Packet<?>) packet);
-		    (new BukkitRunnable() {
-			Location prevLoc = null;
-
-			public void run() {
-			    Location loc1 = p.getLocation();
-			    Location loc2 = e.getHitEntity().getLocation();
-			    double dX = loc2.getX() - loc1.getX();
-			    double dY = loc2.getY() - loc1.getY();
-			    double dZ = loc2.getZ() - loc1.getZ();
-			    double yaw = Math.atan2(dZ, dX);
-			    double pitch = Math.atan2(Math.sqrt(dZ * dZ + dX * dX), dY) + Math.PI;
-			    double X = Math.sin(pitch) * Math.cos(yaw);
-			    double Y = Math.sin(pitch) * Math.sin(yaw);
-			    double Z = Math.cos(pitch);
-			    Vector vector = new Vector(X, Z, Y);
-			    Vector v = new Vector(-dX, -dY, -dZ);
-			    if (Listener.hooks.get(p.getName()) == null) {
-				cancel();
-				PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent, null);
-				Collection<? extends Player> players = Bukkit.getServer().getOnlinePlayers();
-				for (Player player : players)
-				    (((CraftPlayer) player).getHandle()).b.a((Packet<?>) packet);
-				e.getHitEntity().setVelocity(new Vector(0, 0, 0));
-				return;
-			    }
-			    if (Listener.hooks.get(p.getName()) != e.getEntity()) {
-				cancel();
-				PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent, null);
-				Collection<? extends Player> players = Bukkit.getServer().getOnlinePlayers();
-				for (Player player : players)
-				    (((CraftPlayer) player).getHandle()).b.a((Packet<?>) packet);
-				e.getHitEntity().setVelocity(new Vector(0, 0, 0));
-				return;
-			    }
-			    if (this.prevLoc != null) {
-				Vector v2 = new Vector(this.prevLoc.getX() - loc2.getX(),
-					this.prevLoc.getY() - loc2.getY(), this.prevLoc.getZ() - loc2.getZ());
-				if (v2.length() <= 0.5D) {
-				    cancel();
-				    if (Listener.grapplingRetract.get(p) != null) {
-					Listener.grapplingRetract.remove(p);
-					p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-				    }
-				    p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS, 1000.0F,
-					    1.0F);
-				    Listener.hooks.remove(p.getName());
-				    PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent, null);
-				    Collection<? extends Player> players = Bukkit.getServer().getOnlinePlayers();
-				    for (Player player : players)
-					(((CraftPlayer) player).getHandle()).b.a((Packet<?>) packet);
-				    e.getHitEntity().setVelocity(new Vector(0, 0, 0));
-				} else {
-				    this.prevLoc = loc2;
-				    if (v.length() > 1.5D) {
-					e.getHitEntity().setVelocity(vector);
-				    } else {
-					cancel();
-					if (Listener.grapplingRetract.get(p) != null) {
-					    Listener.grapplingRetract.remove(p);
-					    p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-					}
-					p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS,
-						1000.0F, 1.0F);
-					Listener.hooks.remove(p.getName());
-					PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent, null);
-					Collection<? extends Player> players = Bukkit.getServer().getOnlinePlayers();
-					for (Player player : players)
-					    (((CraftPlayer) player).getHandle()).b.a((Packet<?>) packet);
-					e.getHitEntity().setVelocity(new Vector(0, 0, 0));
-				    }
-				}
-			    } else {
-				this.prevLoc = loc2;
-				if (v.length() > 1.5D) {
-				    e.getHitEntity().setVelocity(vector);
-				} else {
-				    cancel();
-				    if (Listener.grapplingRetract.get(p) != null) {
-					Listener.grapplingRetract.remove(p);
-					p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-				    }
-				    p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS, 1000.0F,
-					    1.0F);
-				    Listener.hooks.remove(p.getName());
-				    PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent, null);
-				    Collection<? extends Player> players = Bukkit.getServer().getOnlinePlayers();
-				    for (Player player : players)
-					(((CraftPlayer) player).getHandle()).b.a((Packet<?>) packet);
-				    e.getHitEntity().setVelocity(new Vector(0, 0, 0));
-				}
-			    }
-			}
-		    }).runTaskTimer((Plugin) Main.getInstance(), 0L, 2L);
-		}
+		e.setCancelled(true);
+		GrapplingHookManager manager = GrapplingHookManager.getFromArrow((Arrow) e.getEntity());
+		manager.retractEntity(e.getHitEntity());
 	    }
 	}
     }
@@ -1120,7 +684,7 @@ public class Listener implements org.bukkit.event.Listener {
 	PData.register();
 	CustomBlock.initPlayer(p);
 	if (PData.getCurrentRace() == Race.NONE) {
-	    RaceManager manager = new RaceManager();
+	    RaceInventoryManager manager = new RaceInventoryManager();
 	    p.openInventory(manager.getInventory());
 	    PlayerData.applyAttributes(p, true);
 	} else {
@@ -1207,25 +771,9 @@ public class Listener implements org.bukkit.event.Listener {
 		    cancel();
 		    Player p = e.getPlayer();
 		    PlayerData PData = PlayerData.getData(p);
-		    if (Listener.hooks.get(p.getName()) != null) {
-			Arrow prevArr = Listener.hooks.get(p.getName());
-			if (Listener.grapplingExtend.get(p) != null) {
-			    Listener.grapplingExtend.remove(p);
-			    p.stopSound("zelda.clawshot.extend", SoundCategory.PLAYERS);
-			}
-			if (Listener.grapplingRetract.get(p) != null) {
-			    Listener.grapplingRetract.remove(p);
-			    p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-			}
-			for (org.bukkit.entity.Entity ents : prevArr.getPassengers())
-			    ents.remove();
-			prevArr.remove();
-			Listener.hooks.remove(p.getName());
-		    }
-		    if (PData.isAttachedToWall()) {
-			PData.detachFromWall();
-			p.setGravity(true);
-		    }
+		    GrapplingHookManager manager = GrapplingHookManager.getFromPlayer(p);
+		    if (manager != null)
+			manager.cleanArrow();
 		    PlayerData.applyAttributes(p, true);
 		    PData.respawn();
 		    if (PData.getCurrentRace() == Race.PIAF) {
@@ -1250,25 +798,9 @@ public class Listener implements org.bukkit.event.Listener {
     public void onPlayerLeave(PlayerQuitEvent e) {
 	Player p = e.getPlayer();
 	PlayerData PData = PlayerData.getData(p);
-	if (hooks.get(p.getName()) != null) {
-	    Arrow prevArr = hooks.get(p.getName());
-	    if (grapplingExtend.get(p) != null) {
-		grapplingExtend.remove(p);
-		p.stopSound("zelda.clawshot.extend", SoundCategory.PLAYERS);
-	    }
-	    if (grapplingRetract.get(p) != null) {
-		grapplingRetract.remove(p);
-		p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-	    }
-	    for (org.bukkit.entity.Entity ents : prevArr.getPassengers())
-		ents.remove();
-	    prevArr.remove();
-	    hooks.remove(p.getName());
-	}
-	if (PData.isAttachedToWall()) {
-	    PData.detachFromWall();
-	    p.setGravity(true);
-	}
+	GrapplingHookManager manager = GrapplingHookManager.getFromPlayer(p);
+	if (manager != null)
+	    manager.cleanArrow();
 	PData.setHealth(p.getHealth());
 	PData.unregister();
     }
@@ -1347,7 +879,7 @@ public class Listener implements org.bukkit.event.Listener {
 	if (ent instanceof Player && InventoryManager.isCustomInventory(e.getInventory())) {
 	    InventoryManager m = InventoryManager.getManager(e.getInventory());
 	    m.handleClose(e);
-	} 
+	}
     }
 
     @EventHandler
@@ -1434,6 +966,9 @@ public class Listener implements org.bukkit.event.Listener {
 			eventLight = new EntityLightDamageByEntityEvent(e, entity, shooter);
 			Bukkit.getPluginManager().callEvent((Event) eventLight);
 			break;
+		    case BOMB:
+			Location loc = entity.getLocation();
+			loc.getWorld().createExplosion(loc, 4, false, false);
 		    }
 		}
 	    }
@@ -1744,28 +1279,42 @@ public class Listener implements org.bukkit.event.Listener {
 	    Arrow arrow = (Arrow) proj;
 	    ItemStack bow = e.getBow();
 	    NBTItem nbt = new NBTItem(bow);
-	    if (nbt.getKeys().contains("ItemType"))
-		if (nbt.getString("ItemType").equals("Light_Bow")) {
+	    if (nbt.getKeys().contains("ItemType")) {
+		Item type = Item.valueOf(nbt.getString("ItemType"));
+		switch (type) {
+		case BOMB_BOW:
 		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
-			    PersistentDataType.STRING, DamageType.LIGHT.toString());
-		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-		} else if (nbt.getString("ItemType").equals("Dark_Bow")) {
+			    PersistentDataType.STRING, DamageType.BOMB.toString());
+		    break;
+		case DARK_BOW:
 		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.DARK.toString());
-		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-		} else if (nbt.getString("ItemType").equals("Ice_Bow")) {
-		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
-			    PersistentDataType.STRING, DamageType.ICE.toString());
-		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-		} else if (nbt.getString("ItemType").equals("Electric_Bow")) {
+		    break;
+		case ELECTRIC_BOW:
 		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.ELECTRIC.toString());
-		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
-		} else if (nbt.getString("ItemType").equals("Fire_Bow")) {
+		    break;
+		case FIRE_BOW:
 		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
 			    PersistentDataType.STRING, DamageType.FIRE.toString());
-		    arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+		    break;
+		case ICE_BOW:
+		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
+			    PersistentDataType.STRING, DamageType.ICE.toString());
+		    break;
+		case LIGHT_BOW:
+		    arrow.getPersistentDataContainer().set(new NamespacedKey((Plugin) Main.getInstance(), "DamageType"),
+			    PersistentDataType.STRING, DamageType.LIGHT.toString());
+		    break;
+		case SHADOW_CRYSTAL:
+		case HEART_PIECE:
+		case HEART_CONTAINER:
+		case GRAPPLING_HOOK:
+		default:
+		    break;
 		}
+		arrow.setPickupStatus(AbstractArrow.PickupStatus.DISALLOWED);
+	    }
 	}
     }
 
@@ -1977,12 +1526,12 @@ public class Listener implements org.bukkit.event.Listener {
 	if (memory.hasStable() && memory.isMainNPC()) {
 	    StableMemory stable = memory.getStable();
 	    if (PData.hasDiscoveredStable(stable)) {
-		/*Inventory inv = InventoryManager.createInventory(null, 54, "Stable", CustomInventoryType.STABLE);
-		if (stable.isOwner(p)) {
-		    StableManager.populateStableOwnerMenu(inv, p, stable);
-		} else {
-		    StableManager.populateStableTeleport(inv, p, stable, 0);
-		}*/
+		/*
+		 * Inventory inv = InventoryManager.createInventory(null, 54, "Stable",
+		 * CustomInventoryType.STABLE); if (stable.isOwner(p)) {
+		 * StableManager.populateStableOwnerMenu(inv, p, stable); } else {
+		 * StableManager.populateStableTeleport(inv, p, stable, 0); }
+		 */
 	    } else {
 		p.sendMessage("Discovered !");
 		PData.discoverStable(stable);
@@ -2118,12 +1667,14 @@ public class Listener implements org.bukkit.event.Listener {
 	    }
 	}
     }
-    
+
     @EventHandler
     public void onMobTarget(EntityTargetLivingEntityEvent e) {
-	if (!(e.getTarget() instanceof Player)) return;
+	if (!(e.getTarget() instanceof Player))
+	    return;
 	Player p = (Player) e.getTarget();
 	PlayerData PData = PlayerData.getData(p);
-	if (!PData.isVisible()) e.setCancelled(true);
+	if (!PData.isVisible())
+	    e.setCancelled(true);
     }
 }

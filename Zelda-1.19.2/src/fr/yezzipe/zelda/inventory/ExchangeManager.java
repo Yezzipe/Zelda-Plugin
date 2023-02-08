@@ -11,6 +11,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 
 import org.bukkit.inventory.ItemStack;
@@ -204,5 +205,9 @@ public class ExchangeManager extends InventoryManager {
 		break;
 	    }
 	}
+    }
+
+    public void handleClose(InventoryCloseEvent e) {
+	// TODO Auto-generated method stub
     }
 }

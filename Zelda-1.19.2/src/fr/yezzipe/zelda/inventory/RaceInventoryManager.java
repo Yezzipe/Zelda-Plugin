@@ -8,20 +8,17 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-public class RaceManager extends InventoryManager {
+public class RaceInventoryManager extends InventoryManager {
 
-    public RaceManager() {
+    public RaceInventoryManager() {
 	createInventory(null, 9, "Race", CustomInventoryType.RACE);
 	populateInventory();
     }

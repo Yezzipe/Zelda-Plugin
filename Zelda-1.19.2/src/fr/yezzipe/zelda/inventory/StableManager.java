@@ -1,21 +1,6 @@
 package fr.yezzipe.zelda.inventory;
 
-import de.tr7zw.nbtapi.NBTItem;
-import fr.yezzipe.zelda.entity.player.PlayerData;
-import fr.yezzipe.zelda.items.RupeeBuilder;
-import fr.yezzipe.zelda.items.enums.Rupees;
-import fr.yezzipe.zelda.territory.structures.StableMemory;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-import org.bukkit.Material;
-import org.bukkit.block.Biome;
-import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-
-public class StableManager extends InventoryManager {
+public class StableManager {
   /*public static HashMap<UUID, StableMemory> stables = new HashMap<>();
   
   public static void populateStableTeleport(Inventory inv, Player p, StableMemory stable, int page) {

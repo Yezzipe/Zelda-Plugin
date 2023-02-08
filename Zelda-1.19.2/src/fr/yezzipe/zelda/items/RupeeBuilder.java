@@ -21,7 +21,7 @@ public class RupeeBuilder {
         meta.setDisplayName("§9Blue Rupee");
         blue.setItemMeta(meta);
         nbt = new NBTItem(blue);
-        nbt.setString("ItemType", "Blue_Rupee");
+        nbt.setString("ItemType", Rupees.BLUE.toString());
         customItem = nbt.getItem();
         break;
       case GOLD:
@@ -31,7 +31,7 @@ public class RupeeBuilder {
         meta.setDisplayName("§6Gold Rupee");
         gold.setItemMeta(meta);
         nbt = new NBTItem(gold);
-        nbt.setString("ItemType", "Gold_Rupee");
+        nbt.setString("RupeeType", Rupees.GOLD.toString());
         customItem = nbt.getItem();
         break;
       case GREEN:
@@ -41,7 +41,7 @@ public class RupeeBuilder {
         meta.setDisplayName("§aGreen Rupee");
         green.setItemMeta(meta);
         nbt = new NBTItem(green);
-        nbt.setString("ItemType", "Green_Rupee");
+        nbt.setString("RupeeType", Rupees.GREEN.toString());
         customItem = nbt.getItem();
         break;
       case PURPLE:
@@ -51,7 +51,7 @@ public class RupeeBuilder {
         meta.setDisplayName("§5Purple Rupee");
         purple.setItemMeta(meta);
         nbt = new NBTItem(purple);
-        nbt.setString("ItemType", "Purple_Rupee");
+        nbt.setString("RupeeType", Rupees.PURPLE.toString());
         customItem = nbt.getItem();
         break;
       case RED:
@@ -61,7 +61,7 @@ public class RupeeBuilder {
         meta.setDisplayName("§4Red Rupee");
         red.setItemMeta(meta);
         nbt = new NBTItem(red);
-        nbt.setString("ItemType", "Red_Rupee");
+        nbt.setString("RupeeType", Rupees.RED.toString());
         customItem = nbt.getItem();
         break;
       case SILVER:
@@ -71,7 +71,7 @@ public class RupeeBuilder {
         meta.setDisplayName("§7Silver Rupee");
         silver.setItemMeta(meta);
         nbt = new NBTItem(silver);
-        nbt.setString("ItemType", "Silver_Rupee");
+        nbt.setString("RupeeType", Rupees.SILVER.toString());
         customItem = nbt.getItem();
         break;
       case YELLOW:
@@ -81,7 +81,7 @@ public class RupeeBuilder {
         meta.setDisplayName("§eYellow Rupee");
         yellow.setItemMeta(meta);
         nbt = new NBTItem(yellow);
-        nbt.setString("ItemType", "Yellow_Rupee");
+        nbt.setString("RupeeType", Rupees.YELLOW.toString());
         customItem = nbt.getItem();
         break;
     } 

@@ -4,19 +4,19 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 public class PotionEffectMemory {
-    
+
     private int duration;
-    
+
     private int amplifier;
-    
+
     private String type;
-    
+
     private boolean isAmbient;
-    
+
     private boolean hasParticles;
-    
+
     private boolean hasIcon;
-    
+
     public PotionEffectMemory(PotionEffect effect) {
 	duration = effect.getDuration();
 	amplifier = effect.getAmplifier();
@@ -25,24 +25,25 @@ public class PotionEffectMemory {
 	hasParticles = effect.hasParticles();
 	hasIcon = effect.hasIcon();
     }
-    
+
     public PotionEffectMemory(PotionEffectType type, int duration) {
 	this(type, duration, 0, false, false, false);
     }
-    
+
     public PotionEffectMemory(PotionEffectType type, int duration, int amplifier) {
 	this(type, duration, amplifier, false, false, false);
     }
-    
+
     public PotionEffectMemory(PotionEffectType type, int duration, int amplifier, boolean ambient) {
 	this(type, duration, amplifier, ambient, false, false);
     }
-    
+
     public PotionEffectMemory(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particle) {
 	this(type, duration, amplifier, ambient, particle, false);
     }
-    
-    public PotionEffectMemory(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particle, boolean icon) {
+
+    public PotionEffectMemory(PotionEffectType type, int duration, int amplifier, boolean ambient, boolean particle,
+	    boolean icon) {
 	this.type = type.getName();
 	this.duration = duration;
 	this.amplifier = amplifier;
@@ -71,17 +72,17 @@ public class PotionEffectMemory {
 	return new PotionEffect(getType(), duration, amplifier, isAmbient, hasParticles, hasIcon);
     }
 
-	public void incrementAmplifier(int amplifier) {
-		this.amplifier += 1+amplifier;
-	}
+    public void incrementAmplifier(int amplifier) {
+	this.amplifier += 1 + amplifier;
+    }
 
-	public void setAmplifier(int amplifier) {
-	    this.amplifier = amplifier;
-	    
-	}
+    public void setAmplifier(int amplifier) {
+	this.amplifier = amplifier;
 
-	public void setDuration(int duration) {
-	    this.duration = duration;    
-	}
-    
+    }
+
+    public void setDuration(int duration) {
+	this.duration = duration;
+    }
+
 }

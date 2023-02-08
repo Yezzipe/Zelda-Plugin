@@ -1,6 +1,5 @@
 package fr.yezzipe.zelda.inventory;
 
 public enum CustomInventoryType {
-  RACE, SHADOW_CRYSTAL, RINGS, STABLE, EXCHANGE, COOKING;
+    RACE, SHADOW_CRYSTAL, RINGS, STABLE, EXCHANGE, COOKING;
 }
-

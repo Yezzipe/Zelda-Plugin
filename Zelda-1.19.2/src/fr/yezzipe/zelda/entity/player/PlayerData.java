@@ -84,7 +84,7 @@ public class PlayerData {
     private static HashMap<String, PlayerData> Players = new HashMap<String, PlayerData>();
 
     private int potionTask;
-    
+
     private int titleTask;
 
     private Biome currentBiome;
@@ -227,7 +227,7 @@ public class PlayerData {
 	    }
 	}.runTaskTimer((Plugin) Main.getInstance(), 0, 20).getTaskId();
 	titleTask = new BukkitRunnable() {
-	    
+
 	    @Override
 	    public void run() {
 		if (!p.isOnline()) {
@@ -323,7 +323,7 @@ public class PlayerData {
 		    continue;
 		}
 		player.setHealth((playerData.getHealth() > player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue())
-			? ((Double) attributes.get(key)).doubleValue()
+			? attributes.get(key).doubleValue()
 			: playerData.getHealth());
 	    }
 	}
@@ -745,11 +745,13 @@ public class PlayerData {
 	    }
 	}
     }
-    
+
     private boolean isPlayerInWater() {
 	Player p = Bukkit.getPlayer(getUuid());
 	Block b = p.getEyeLocation().getBlock();
-	if (b.getType() == Material.WATER || b.getType() == Material.KELP_PLANT || b.getType() == Material.SEAGRASS || b.getType() == Material.TALL_SEAGRASS) return true;
+	if (b.getType() == Material.WATER || b.getType() == Material.KELP_PLANT || b.getType() == Material.SEAGRASS
+		|| b.getType() == Material.TALL_SEAGRASS)
+	    return true;
 	if (b.getBlockData() instanceof Waterlogged) {
 	    return ((Waterlogged) b.getBlockData()).isWaterlogged();
 	}
@@ -795,14 +797,33 @@ public class PlayerData {
     public Biome getCurrentBiome() {
 	return currentBiome;
     }
-    
+
     private void sendTemperature() {
 	Player p = Bukkit.getPlayer(getUuid());
-	TextComponent text = new TextComponent("<-------->");
+	String t;
+	switch (TemperatureRegistry.getTemperature(currentBiome)) {
+	case EXTREME_COLD:
+	case EXTREME_HOT:
+	    t = "----";
+	    break;
+	case COLD:
+	case HOT:
+	    t = "--";
+	    break;
+	default:
+	case NORMAL:
+	    t = "-";
+	    break;
+	case VERY_COLD:
+	case VERY_HOT:
+	    t = "---";
+	    break;		
+	}
+	TextComponent text = new TextComponent(t);
 	text.setColor(TemperatureRegistry.getColor(TemperatureRegistry.getTemperature(currentBiome)));
 	p.spigot().sendMessage(ChatMessageType.ACTION_BAR, text);
     }
-    
+
     public boolean isVisible() {
 	return isVisible;
     }

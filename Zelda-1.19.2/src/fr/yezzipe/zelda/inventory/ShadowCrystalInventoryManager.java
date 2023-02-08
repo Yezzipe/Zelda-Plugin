@@ -26,11 +26,11 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
-public class ShadowCrystalManager extends InventoryManager {
+public class ShadowCrystalInventoryManager extends InventoryManager {
 
     private Player p;
 
-    public ShadowCrystalManager(Player p) {
+    public ShadowCrystalInventoryManager(Player p) {
 	this.p = p;
 	createInventory(null, 9, "Shadow Crystal", CustomInventoryType.SHADOW_CRYSTAL);
 	populateInventory();

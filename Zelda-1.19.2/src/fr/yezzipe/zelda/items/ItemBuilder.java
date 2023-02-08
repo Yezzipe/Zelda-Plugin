@@ -21,7 +21,7 @@ public class ItemBuilder {
 	ItemStack grappling_item;
 	ItemMeta meta;
 	NBTItem nbt;
-	ItemStack dark_bow, electric_bow, fire_bow, ice_bow, light_bow, heart_piece, heart_container, crystal,
+	ItemStack dark_bow, electric_bow, fire_bow, ice_bow, light_bow, bomb_bow, heart_piece, heart_container, crystal,
 		customItem = null;
 	switch (item) {
 	case GRAPPLING_HOOK:
@@ -32,7 +32,7 @@ public class ItemBuilder {
 	    meta.setDisplayName("Grappling Hook");
 	    grappling_item.setItemMeta(meta);
 	    nbt = new NBTItem(grappling_item);
-	    nbt.setString("ItemType", "Grappling");
+	    nbt.setString("ItemType", Item.GRAPPLING_HOOK.toString());
 	    customItem = nbt.getItem();
 	    break;
 	case DARK_BOW:
@@ -43,7 +43,7 @@ public class ItemBuilder {
 	    meta.setDisplayName("§5Dark Bow");
 	    dark_bow.setItemMeta(meta);
 	    nbt = new NBTItem(dark_bow);
-	    nbt.setString("ItemType", "Dark_Bow");
+	    nbt.setString("ItemType", Item.DARK_BOW.toString());
 	    customItem = nbt.getItem();
 	    break;
 	case ELECTRIC_BOW:
@@ -54,7 +54,7 @@ public class ItemBuilder {
 	    meta.setDisplayName("§eElectric Bow");
 	    electric_bow.setItemMeta(meta);
 	    nbt = new NBTItem(electric_bow);
-	    nbt.setString("ItemType", "Electric_Bow");
+	    nbt.setString("ItemType", Item.ELECTRIC_BOW.toString());
 	    customItem = nbt.getItem();
 	    break;
 	case FIRE_BOW:
@@ -65,7 +65,7 @@ public class ItemBuilder {
 	    meta.setDisplayName("§cFire Bow");
 	    fire_bow.setItemMeta(meta);
 	    nbt = new NBTItem(fire_bow);
-	    nbt.setString("ItemType", "Fire_Bow");
+	    nbt.setString("ItemType", Item.FIRE_BOW.toString());
 	    customItem = nbt.getItem();
 	    break;
 	case ICE_BOW:
@@ -76,7 +76,7 @@ public class ItemBuilder {
 	    meta.setDisplayName("§bIce Bow");
 	    ice_bow.setItemMeta(meta);
 	    nbt = new NBTItem(ice_bow);
-	    nbt.setString("ItemType", "Ice_Bow");
+	    nbt.setString("ItemType", Item.ICE_BOW.toString());
 	    customItem = nbt.getItem();
 	    break;
 	case LIGHT_BOW:
@@ -87,7 +87,18 @@ public class ItemBuilder {
 	    meta.setDisplayName("§6Light Bow");
 	    light_bow.setItemMeta(meta);
 	    nbt = new NBTItem(light_bow);
-	    nbt.setString("ItemType", "Light_Bow");
+	    nbt.setString("ItemType", Item.LIGHT_BOW.toString());
+	    customItem = nbt.getItem();
+	    break;
+	case BOMB_BOW:
+	    bomb_bow = new ItemStack(Material.BOW);
+	    meta = bomb_bow.getItemMeta();
+	    meta.setUnbreakable(true);
+	    meta.setCustomModelData(Integer.valueOf(6));
+	    meta.setDisplayName("§3Bomb Bow");
+	    bomb_bow.setItemMeta(meta);
+	    nbt = new NBTItem(bomb_bow);
+	    nbt.setString("ItemType", Item.BOMB_BOW.toString());
 	    customItem = nbt.getItem();
 	    break;
 	case HEART_PIECE:
@@ -97,7 +108,7 @@ public class ItemBuilder {
 	    meta.setDisplayName("§cHeart Piece");
 	    heart_piece.setItemMeta(meta);
 	    nbt = new NBTItem(heart_piece);
-	    nbt.setString("ItemType", "Heart_Piece");
+	    nbt.setString("ItemType", Item.HEART_PIECE.toString());
 	    customItem = nbt.getItem();
 	    break;
 	case HEART_CONTAINER:
@@ -107,7 +118,7 @@ public class ItemBuilder {
 	    meta.setDisplayName("§cHeart Container");
 	    heart_container.setItemMeta(meta);
 	    nbt = new NBTItem(heart_container);
-	    nbt.setString("ItemType", "Heart_Container");
+	    nbt.setString("ItemType", Item.HEART_CONTAINER.toString());
 	    customItem = nbt.getItem();
 	    break;
 	case SHADOW_CRYSTAL:
@@ -117,7 +128,7 @@ public class ItemBuilder {
 	    meta.setDisplayName("§8Shadow Crystal");
 	    crystal.setItemMeta(meta);
 	    nbt = new NBTItem(crystal);
-	    nbt.setString("ItemType", "Shadow_Crystal");
+	    nbt.setString("ItemType", Item.SHADOW_CRYSTAL.toString());
 	    nbt.setString("AntiStack", UUID.randomUUID().toString());
 	    customItem = nbt.getItem();
 	    break;

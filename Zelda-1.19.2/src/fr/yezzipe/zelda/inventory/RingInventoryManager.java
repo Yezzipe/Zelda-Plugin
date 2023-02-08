@@ -17,11 +17,11 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 
-public class RingManager extends InventoryManager {
+public class RingInventoryManager extends InventoryManager {
 
     private Player p;
 
-    public RingManager(Player p) {
+    public RingInventoryManager(Player p) {
 	this.p = p;
 	createInventory(null,  9, "Rings", CustomInventoryType.RINGS);
 	populateInventory();
