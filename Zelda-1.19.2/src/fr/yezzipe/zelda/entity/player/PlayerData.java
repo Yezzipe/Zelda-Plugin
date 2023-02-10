@@ -386,6 +386,8 @@ public class PlayerData {
     private Collection<PotionEffectMemory> getPotionsFromRings() {
 	Collection<PotionEffectMemory> potions = new ArrayList<>();
 	List<Ring> rings = getRings();
+	if (rings.contains(Ring.GORON_RING))
+	    potions.add(new PotionEffectMemory(PotionEffectType.FIRE_RESISTANCE, 2147483647, 0, false, false));
 	if (rings.contains(Ring.KOKIRI_RING))
 	    potions.add(new PotionEffectMemory(PotionEffectType.REGENERATION, 2147483647, 0, false, false));
 	if (rings.contains(Ring.INVISIBILITY_RING))
@@ -826,5 +828,26 @@ public class PlayerData {
 
     public boolean isVisible() {
 	return isVisible;
+    }
+
+    public int getRingsNumber() {
+	switch (currentRace) {
+	case GERUDO:
+	case GORON:
+	case KOKIRI:
+	case SHEIKAH:
+	case TWILI:
+	case ZORA:
+	case PIAF:
+	    return 3;
+	case HYLIA:
+	    return 9;
+	case HYLIEN:
+	    return 5;
+	case NONE:
+	default:
+	    return 0;
+	}
+	
     }
 }
