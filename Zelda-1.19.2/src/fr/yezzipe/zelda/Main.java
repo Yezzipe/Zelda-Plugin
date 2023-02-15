@@ -320,6 +320,15 @@ public class Main extends JavaPlugin {
 	    return true;
 	return false;
     }
+    
+    public static void remove(String fileName) {
+	Path path = Paths.get((getPlugin(Main.class)).getDataFolder() + "/" + fileName + ".json", new String[0]);
+	try {
+	    Files.deleteIfExists(path);
+	} catch (IOException e) {
+	    e.printStackTrace();
+	}
+    }
 
     @SuppressWarnings("unused")
     public static boolean isInt(String string) {

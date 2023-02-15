@@ -371,7 +371,8 @@ public class PlayerData {
 	    list.add(new PotionEffectMemory(PotionEffectType.REGENERATION, 2147483647, 0, false, false, false));
 	    break;
 	case TWILI:
-	    list.add(new PotionEffectMemory(PotionEffectType.NIGHT_VISION, 2147483647, 0, false, false, false));
+	    if (currentDimension != Environment.THE_END)
+		list.add(new PotionEffectMemory(PotionEffectType.NIGHT_VISION, 2147483647, 0, false, false, false));
 	    break;
 	case SHEIKAH:
 	    if (isSpedUp)
@@ -819,7 +820,7 @@ public class PlayerData {
 	case VERY_COLD:
 	case VERY_HOT:
 	    t = "---";
-	    break;		
+	    break;
 	}
 	TextComponent text = new TextComponent(t);
 	text.setColor(TemperatureRegistry.getColor(TemperatureRegistry.getTemperature(currentBiome)));
@@ -848,6 +849,6 @@ public class PlayerData {
 	default:
 	    return 0;
 	}
-	
+
     }
 }

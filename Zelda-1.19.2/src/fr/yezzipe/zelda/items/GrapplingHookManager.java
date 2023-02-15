@@ -299,6 +299,18 @@ public class GrapplingHookManager extends ItemManager {
 	}).runTaskTimer((Plugin) Main.getInstance(), 0L, 2L);
 	retractTaskBlock = runnable1;
     }
+    
+    public void stopRetractEntity() {
+	CraftEntity Cent = (CraftEntity) hitEntity;
+	final Entity ent = Cent.getHandle();
+	retractTaskSound.cancel();
+	p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
+	p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS, 1000.0F, 1.0F);
+	hooks.unbind(p);
+	PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent, null);
+	PacketManager.sendPacketToAll(packet);
+	hitEntity.setVelocity(new Vector(0, 0, 0));
+    }
 
     public void retractEntity(org.bukkit.entity.Entity entity) {
 	hitEntity = entity;
@@ -342,6 +354,7 @@ public class GrapplingHookManager extends ItemManager {
 		Vector v = new Vector(-dX, -dY, -dZ);
 		if (hooks.get(p) == null) {
 		    cancel();
+		    retractTaskSound.cancel();
 		    PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent, null);
 		    PacketManager.sendPacketToAll(packet);
 		    hitEntity.setVelocity(new Vector(0, 0, 0));
@@ -352,26 +365,14 @@ public class GrapplingHookManager extends ItemManager {
 			    this.prevLoc.getZ() - loc2.getZ());
 		    if (v2.length() <= 0.5D) {
 			cancel();
-			retractTaskSound.cancel();
-			p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-			p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			hooks.unbind(p);
-			PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent, null);
-			PacketManager.sendPacketToAll(packet);
-			hitEntity.setVelocity(new Vector(0, 0, 0));
+			stopRetractEntity();
 		    } else {
 			this.prevLoc = loc2;
 			if (v.length() > 1.5D) {
 			    hitEntity.setVelocity(vector);
 			} else {
 			    cancel();
-			    retractTaskSound.cancel();
-			    p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-			    p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			    hooks.unbind(p);
-			    PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent, null);
-			    PacketManager.sendPacketToAll(packet);
-			    hitEntity.setVelocity(new Vector(0, 0, 0));
+			    stopRetractEntity();
 			}
 		    }
 		} else {
@@ -380,13 +381,7 @@ public class GrapplingHookManager extends ItemManager {
 			hitEntity.setVelocity(vector);
 		    } else {
 			cancel();
-			retractTaskSound.cancel();
-			p.stopSound("zelda.clawshot.retract", SoundCategory.PLAYERS);
-			p.playSound(p.getLocation(), "zelda.clawshot.end", SoundCategory.PLAYERS, 1000.0F, 1.0F);
-			hooks.unbind(p);
-			PacketPlayOutAttachEntity packet = new PacketPlayOutAttachEntity(ent, null);
-			PacketManager.sendPacketToAll(packet);
-			hitEntity.setVelocity(new Vector(0, 0, 0));
+			stopRetractEntity();
 		    }
 		}
 	    }

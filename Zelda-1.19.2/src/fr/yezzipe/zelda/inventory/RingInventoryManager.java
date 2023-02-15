@@ -5,7 +5,6 @@ import fr.yezzipe.zelda.items.RingBuilder;
 import fr.yezzipe.zelda.items.enums.Ring;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -18,8 +17,6 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 
 public class RingInventoryManager extends InventoryManager {
-
-    private Player p;
     
     private PlayerData PData;
     
@@ -32,7 +29,6 @@ public class RingInventoryManager extends InventoryManager {
     private Collection<Integer> restrictedSlots = new ArrayList<Integer>();
 
     public RingInventoryManager(Player p) {
-	this.p = p;
 	this.PData = PlayerData.getData(p);
 	createInventory(null,  9, "Rings", CustomInventoryType.RINGS);
 	populateInventory();

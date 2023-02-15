@@ -113,6 +113,7 @@ public class CustomBlock {
 	block.setType(Material.AIR);
 	light.setType(Material.AIR);
 	nbt.getData().clearNBT();
+	Main.remove(folderPrefix + uuid);
 	item = null;
 	as = null;
 	block = null;
@@ -180,15 +181,19 @@ public class CustomBlock {
 	Type type = (new TypeToken<CustomBlock>() {
 	}).getType();
 	Set<UUID> uuids = Main.read(folderPrefix + "list", list);
+	if (uuids == null) return;
 	for (UUID uuid : uuids) {
 	    CustomBlock cb = Main.read(folderPrefix + uuid.toString(), type);
-	    cb.init();
+	    if (cb != null)
+		cb.init();
 	}
     }
 
     public void init() {
 	this.block = blockMemory.getBlock();
 	this.light = lightMemory.getBlock();
+	NBTBlock nbt = new NBTBlock(block);
+	nbt.getData().setString("LinkedArmorStand", uuid.toString());
 	blockMemory = null;
 	lightMemory = null;
 	Levelled level = (Levelled) light.getBlockData();

@@ -136,13 +136,7 @@ public class Listener implements org.bukkit.event.Listener {
 	    new Material[] { Material.NETHERITE_CHESTPLATE, Material.DIAMOND_CHESTPLATE, Material.GOLDEN_CHESTPLATE,
 		    Material.IRON_CHESTPLATE, Material.CHAINMAIL_CHESTPLATE, Material.LEATHER_CHESTPLATE });
 
-    // public static HashMap<String, Arrow> hooks = new HashMap<>();
-
     public static Collection<Location> disableLightning = new ArrayList<>();
-
-    // public static HashMap<Player, BukkitTask> grapplingExtend = new HashMap<>();
-
-    // public static HashMap<Player, BukkitTask> grapplingRetract = new HashMap<>();
 
     public static HashMap<Player, Boolean> chargingNPCs = new HashMap<>();
 
@@ -461,7 +455,7 @@ public class Listener implements org.bukkit.event.Listener {
 		    break;
 
 		}
-	    } else if (nbt.getKeys().contains("BlockType")) {
+	    } else if (nbt.getKeys().contains("BlockType") &&  e.getAction() == Action.RIGHT_CLICK_BLOCK) {
 		if (nbt.getString("BlockType").equals("Campfire_Unlit")) {
 		    Block b = e.getClickedBlock();
 		    if (b != null) {
@@ -524,8 +518,14 @@ public class Listener implements org.bukkit.event.Listener {
 		    if (p.isSneaking()) {
 			String uuid = nbt2.getData().getString("LinkedArmorStand");
 			CustomBlock cb = CustomBlock.getCustomBlock(uuid);
+			if (cb == null) {
+			 nbt2.getData().clearNBT();
+			 if (b.getType() == Material.BARRIER) b.setType(Material.AIR);
+			 if (b.getRelative(BlockFace.UP).getType() == Material.LIGHT) b.getRelative(BlockFace.UP).setType(Material.AIR);
+			} else {
 			cb.remove();
 			p.getInventory().addItem(BlockBuilder.build(BlockEnum.CAMP_UNLIT));
+			}
 		    } else
 			p.sendMessage("not sneaking");
 		}
@@ -592,7 +592,8 @@ public class Listener implements org.bukkit.event.Listener {
 			}).runTaskLaterAsynchronously((Plugin) Main.getInstance(), 40L);
 		    } else if (dmgType == DamageType.BOMB) {
 			Location loc = arrow.getLocation();
-			loc.getWorld().createExplosion(loc, 4, false, false);
+			arrow.remove();
+			loc.getWorld().createExplosion(loc, 2, false, false);
 		    }
 		}
 	    }
@@ -968,7 +969,7 @@ public class Listener implements org.bukkit.event.Listener {
 			break;
 		    case BOMB:
 			Location loc = entity.getLocation();
-			loc.getWorld().createExplosion(loc, 4, false, false);
+			loc.getWorld().createExplosion(loc, 2, false, false);
 		    }
 		}
 	    }
