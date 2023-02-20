@@ -2,9 +2,13 @@ package fr.yezzipe.zelda.commands;
 
 import fr.yezzipe.zelda.blocks.BlockBuilder;
 import fr.yezzipe.zelda.blocks.enums.BlockEnum;
+import fr.yezzipe.zelda.items.FoodBuilder;
+import fr.yezzipe.zelda.items.IngredientBuilder;
 import fr.yezzipe.zelda.items.ItemBuilder;
 import fr.yezzipe.zelda.items.RingBuilder;
 import fr.yezzipe.zelda.items.RupeeBuilder;
+import fr.yezzipe.zelda.items.enums.Food;
+import fr.yezzipe.zelda.items.enums.Ingredient;
 import fr.yezzipe.zelda.items.enums.Item;
 import fr.yezzipe.zelda.items.enums.Ring;
 import fr.yezzipe.zelda.items.enums.Rupees;
@@ -51,6 +55,22 @@ public class ItemCommand implements CommandExecutor {
 			return false;
 		    }
 		    ItemStack customItem = BlockBuilder.build(b);
+		    p.getInventory().addItem(new ItemStack[] { customItem });
+		} else if (arg3[0].equals("food")) {
+		    Food b = Food.valueOf(arg3[1]);
+		    if (b == null) {
+			arg0.sendMessage("§cWrong Syntax in Command");
+			return false;
+		    }
+		    ItemStack customItem = FoodBuilder.build(b);
+		    p.getInventory().addItem(new ItemStack[] { customItem });
+		} else if (arg3[0].equals("ingredient")) {
+		    Ingredient b = Ingredient.valueOf(arg3[1]);
+		    if (b == null) {
+			arg0.sendMessage("§cWrong Syntax in Command");
+			return false;
+		    }
+		    ItemStack customItem = IngredientBuilder.build(b);
 		    p.getInventory().addItem(new ItemStack[] { customItem });
 		} else {
 		    arg0.sendMessage("§cWrong Syntax in Command");

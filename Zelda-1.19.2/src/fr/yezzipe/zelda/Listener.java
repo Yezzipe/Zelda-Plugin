@@ -22,6 +22,7 @@ import fr.yezzipe.zelda.events.LeftClickNPCEvent;
 import fr.yezzipe.zelda.events.ModifierCalculator;
 import fr.yezzipe.zelda.events.RightClickNPCEvent;
 import fr.yezzipe.zelda.events.enums.DamageType;
+import fr.yezzipe.zelda.inventory.CookingInventoryManager;
 import fr.yezzipe.zelda.inventory.InventoryManager;
 import fr.yezzipe.zelda.inventory.RaceInventoryManager;
 import fr.yezzipe.zelda.items.DropBuilder;
@@ -526,8 +527,10 @@ public class Listener implements org.bukkit.event.Listener {
 			cb.remove();
 			p.getInventory().addItem(BlockBuilder.build(BlockEnum.CAMP_UNLIT));
 			}
-		    } else
-			p.sendMessage("not sneaking");
+		    } else {
+			CookingInventoryManager manager = new CookingInventoryManager(p);
+		    	p.openInventory(manager.getInventory());
+		    }
 		}
 	    }
 	}

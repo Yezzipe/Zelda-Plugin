@@ -16,9 +16,9 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 
 import org.bukkit.inventory.ItemStack;
 
-public class ExchangeManager extends InventoryManager {
+public class ExchangeInventoryManager extends InventoryManager {
 
-    public ExchangeManager() {
+    public ExchangeInventoryManager() {
 	createInventory(null, 9, "Exchange", CustomInventoryType.EXCHANGE);
 	populateInventory();
     }

@@ -1,6 +1,8 @@
 package fr.yezzipe.zelda.commands;
 
 import fr.yezzipe.zelda.blocks.enums.BlockEnum;
+import fr.yezzipe.zelda.items.enums.Food;
+import fr.yezzipe.zelda.items.enums.Ingredient;
 import fr.yezzipe.zelda.items.enums.Item;
 import fr.yezzipe.zelda.items.enums.Ring;
 import fr.yezzipe.zelda.items.enums.Rupees;
@@ -21,6 +23,8 @@ public class ItemCommandCompleter implements TabCompleter {
 	    strings.add("item");
 	    strings.add("rupee");
 	    strings.add("block");
+	    strings.add("food");
+	    strings.add("ingredient");
 	    Pattern pattern = Pattern.compile("^" + arg3[0], 10);
 	    List<String> strings2 = new ArrayList<>();
 	    for (String s : strings) {
@@ -88,6 +92,38 @@ public class ItemCommandCompleter implements TabCompleter {
 		BlockEnum[] arrayOfRupees;
 		for (i = (arrayOfRupees = BlockEnum.values()).length, b = 0; b < i;) {
 		    BlockEnum r = arrayOfRupees[b];
+		    Matcher matcher = pattern.matcher(r.toString());
+		    if (matcher.find())
+			strings.add(r.toString());
+		    b++;
+		}
+		return strings;
+	    }
+	    if (arg3[0].equals("food")) {
+		String ring = "^" + arg3[1];
+		Pattern pattern = Pattern.compile(ring, 10);
+		List<String> strings = new ArrayList<>();
+		int b;
+		int i;
+		Food[] arrayOfRupees;
+		for (i = (arrayOfRupees = Food.values()).length, b = 0; b < i;) {
+		    Food r = arrayOfRupees[b];
+		    Matcher matcher = pattern.matcher(r.toString());
+		    if (matcher.find())
+			strings.add(r.toString());
+		    b++;
+		}
+		return strings;
+	    }
+	    if (arg3[0].equals("ingredient")) {
+		String ring = "^" + arg3[1];
+		Pattern pattern = Pattern.compile(ring, 10);
+		List<String> strings = new ArrayList<>();
+		int b;
+		int i;
+		Ingredient[] arrayOfRupees;
+		for (i = (arrayOfRupees = Ingredient.values()).length, b = 0; b < i;) {
+		    Ingredient r = arrayOfRupees[b];
 		    Matcher matcher = pattern.matcher(r.toString());
 		    if (matcher.find())
 			strings.add(r.toString());
