@@ -133,6 +133,10 @@ public class CustomBlock {
     public static CustomBlock getCustomBlock(String uuid) {
 	return getCustomBlock(UUID.fromString(uuid));
     }
+    
+    public Block getBlock() {
+	return this.block;
+    }
 
     public void sendToPlayer(Player player) {
 	PacketPlayOutSpawnEntity packet1 = new PacketPlayOutSpawnEntity(as);

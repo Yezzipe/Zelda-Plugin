@@ -33,6 +33,7 @@ import fr.yezzipe.zelda.entity.player.PlayerData;
 import fr.yezzipe.zelda.items.GrapplingHookManager;
 import fr.yezzipe.zelda.items.ItemBuilder;
 import fr.yezzipe.zelda.items.ItemTable;
+import fr.yezzipe.zelda.items.recipe.Recipe;
 import fr.yezzipe.zelda.territory.TemperatureRegistry;
 import fr.yezzipe.zelda.territory.TerritoryUtil;
 import fr.yezzipe.zelda.territory.structures.StableMemory;
@@ -87,7 +88,7 @@ public class Main extends JavaPlugin {
 	ItemBuilder.init();
 	BlockBuilder.init();
 	CustomBlock.initAll();
-
+	Recipe.init();
 	listener = new Listener();
 	getServer().getPluginManager().registerEvents(listener, (Plugin) this);
 	Collection<? extends Player> players = Bukkit.getServer().getOnlinePlayers();

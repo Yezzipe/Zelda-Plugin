@@ -528,7 +528,9 @@ public class Listener implements org.bukkit.event.Listener {
 			p.getInventory().addItem(BlockBuilder.build(BlockEnum.CAMP_UNLIT));
 			}
 		    } else {
-			CookingInventoryManager manager = new CookingInventoryManager(p);
+			String uuid = nbt2.getData().getString("LinkedArmorStand");
+			CustomBlock cb = CustomBlock.getCustomBlock(uuid);
+			CookingInventoryManager manager = new CookingInventoryManager(p, cb);
 		    	p.openInventory(manager.getInventory());
 		    }
 		}
