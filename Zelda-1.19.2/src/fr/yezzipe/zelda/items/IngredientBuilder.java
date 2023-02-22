@@ -1440,7 +1440,7 @@ public class IngredientBuilder {
 	    break;
 	case BRIGHT_EYED_CRAB:
 	    meta = item.getItemMeta();
-	    meta.setCustomModelData(Integer.valueOf(57));
+	    meta.setCustomModelData(Integer.valueOf(58));
 	    meta.setDisplayName("Bright-Eyed Crab");
 	    item.setItemMeta(meta);
 	    nbt = new NBTItem(item);

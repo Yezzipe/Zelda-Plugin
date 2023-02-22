@@ -10,8 +10,8 @@ public class RecipeChoice {
     private Set<Ingredient> choice = new HashSet<Ingredient>();
 
     public RecipeChoice(Ingredient...ingredients) {
-	for (byte i = 0; i < ingredients.length; i++) {
-	    choice.add(ingredients[i]);
+	for (Ingredient i : ingredients) {
+	    choice.add(i);
 	}
     }
     

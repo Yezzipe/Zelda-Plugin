@@ -158,7 +158,6 @@ public class CookingInventoryManager extends InventoryManager {
 	    if (nbt.getKeys().contains("IngredientType"))
 		ingredients.add(Ingredient.valueOf(nbt.getString("IngredientType")));
 	}
-	System.out.println(ingredients);
 	Recipe r = Recipe.getRecipe(ingredients);
 	if (r != null) {
 	    cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), FoodBuilder.build(r.getOutput()));
