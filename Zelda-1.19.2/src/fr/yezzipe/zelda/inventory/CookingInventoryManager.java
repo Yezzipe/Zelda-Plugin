@@ -21,6 +21,7 @@ import de.tr7zw.nbtapi.NBTItem;
 import fr.yezzipe.zelda.Main;
 import fr.yezzipe.zelda.entity.CustomBlock;
 import fr.yezzipe.zelda.items.FoodBuilder;
+import fr.yezzipe.zelda.items.FoodStatCalculator;
 import fr.yezzipe.zelda.items.IngredientBuilder;
 import fr.yezzipe.zelda.items.enums.Food;
 import fr.yezzipe.zelda.items.enums.Ingredient;
@@ -81,9 +82,10 @@ public class CookingInventoryManager extends InventoryManager {
 	} else if (shift && iscurrItemRing && nextItem.getType() == Material.AIR
 		&& !restrictedSlots.contains(Integer.valueOf(e.getRawSlot()))) {
 	    e.setCancelled(true);
+	    System.out.println(currItem);
 	    if (inv.firstEmpty() > -1) {
-		currItem.setAmount(currItem.getAmount() - 1);
 		ItemStack temp = currItem.clone();
+		currItem.setAmount(currItem.getAmount() - 1);
 		temp.setAmount(1);
 		inv.setItem(inv.firstEmpty(), temp);
 	    }
@@ -161,6 +163,7 @@ public class CookingInventoryManager extends InventoryManager {
 	Recipe r = Recipe.getRecipe(ingredients);
 	if (r != null) {
 	    cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), FoodBuilder.build(r.getOutput()));
+	    new FoodStatCalculator(ingredients, r.getOutput());
 	} else {
 	    for (Ingredient i : ingredients) {
 		 cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), IngredientBuilder.build(i));

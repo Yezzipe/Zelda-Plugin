@@ -1,6 +1,6 @@
 name : Zelda
 version: 1.0
-api-version: 1.18
+api-version: 1.19
 author: Yezzipe
 main: fr.yezzipe.zelda.Main
 commands:
