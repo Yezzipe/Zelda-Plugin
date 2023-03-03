@@ -15,15 +15,11 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import de.tr7zw.nbtapi.NBTItem;
 import fr.yezzipe.zelda.Main;
 import fr.yezzipe.zelda.entity.CustomBlock;
-import fr.yezzipe.zelda.items.FoodBuilder;
 import fr.yezzipe.zelda.items.FoodStatCalculator;
-import fr.yezzipe.zelda.items.IngredientBuilder;
-import fr.yezzipe.zelda.items.enums.Food;
 import fr.yezzipe.zelda.items.enums.Ingredient;
 import fr.yezzipe.zelda.items.recipe.Recipe;
 
@@ -59,8 +55,8 @@ public class CookingInventoryManager extends InventoryManager {
 	boolean shift = e.isShiftClick();
 	ItemStack currItem = (e.getCurrentItem() == null) ? new ItemStack(Material.AIR) : e.getCurrentItem();
 	ItemStack nextItem = (e.getCursor() == null) ? new ItemStack(Material.AIR) : e.getCursor();
-	boolean iscurrItemRing = IngredientBuilder.isIngredient(currItem);
-	boolean isnextItemRing = IngredientBuilder.isIngredient(nextItem);
+	boolean iscurrItemRing = Ingredient.isIngredient(currItem);
+	boolean isnextItemRing = Ingredient.isIngredient(nextItem);
 	if (blockedSlots.contains(Integer.valueOf(e.getRawSlot()))) {
 	    e.setCancelled(true);
 	} else if (shift && !iscurrItemRing && nextItem.getType() == Material.AIR) {
@@ -101,7 +97,7 @@ public class CookingInventoryManager extends InventoryManager {
 	if (containBlocked) {
 	    e.setCancelled(true);
 	} else if (containRestricted) {
-	    boolean isNextItem = IngredientBuilder.isIngredient(nextItem);
+	    boolean isNextItem = Ingredient.isIngredient(nextItem);
 	    
 	    if (isNextItem) {
 		int i = 0;
@@ -162,11 +158,13 @@ public class CookingInventoryManager extends InventoryManager {
 	}
 	Recipe r = Recipe.getRecipe(ingredients);
 	if (r != null) {
-	    cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), FoodBuilder.build(r.getOutput()));
-	    new FoodStatCalculator(ingredients, r.getOutput());
+	    ItemStack item = r.getOutput().getFood();
+	    FoodStatCalculator calc = new FoodStatCalculator(ingredients, r.getOutput());
+	    item = calc.apply(item);
+	    cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), item);
 	} else {
 	    for (Ingredient i : ingredients) {
-		 cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), IngredientBuilder.build(i));
+		 cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), i.getIngredient());
 	    }
 	}
 	// Play Sound

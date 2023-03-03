@@ -1,7 +1,6 @@
 package fr.yezzipe.zelda.commands;
 
 import fr.yezzipe.zelda.Main;
-import fr.yezzipe.zelda.items.DropBuilder;
 import fr.yezzipe.zelda.items.enums.Drop;
 
 import org.bukkit.Location;
@@ -22,7 +21,7 @@ public class DropCommand implements CommandExecutor {
 			arg0.sendMessage("§cWrong Syntax in Command");
 			return false;
 		    }
-		    ItemStack item = DropBuilder.build(drop);
+		    ItemStack item = drop.getDrop();
 		    if (Main.isInt(arg3[2]) && Main.isInt(arg3[3]) && Main.isInt(arg3[4])) {
 			Location loc = new Location(p.getWorld(), Integer.parseInt(arg3[2]), Integer.parseInt(arg3[3]),
 				Integer.parseInt(arg3[4]));
@@ -36,7 +35,7 @@ public class DropCommand implements CommandExecutor {
 			arg0.sendMessage("§cWrong Syntax in Command");
 			return false;
 		    }
-		    ItemStack item = DropBuilder.build(drop);
+		    ItemStack item = drop.getDrop();
 		    if (Main.isInt(arg3[2]) && Main.isInt(arg3[3]) && Main.isInt(arg3[4])) {
 			Location loc = new Location(p.getWorld(), p.getLocation().getX() + Integer.parseInt(arg3[2]),
 				p.getLocation().getY() + Integer.parseInt(arg3[3]),

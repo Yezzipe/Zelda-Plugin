@@ -31,8 +31,8 @@ import fr.yezzipe.zelda.entity.npc.NPCMemory;
 import fr.yezzipe.zelda.entity.player.BiomeRegistry;
 import fr.yezzipe.zelda.entity.player.PlayerData;
 import fr.yezzipe.zelda.items.GrapplingHookManager;
-import fr.yezzipe.zelda.items.ItemBuilder;
 import fr.yezzipe.zelda.items.ItemTable;
+import fr.yezzipe.zelda.items.enums.Item;
 import fr.yezzipe.zelda.items.recipe.Recipe;
 import fr.yezzipe.zelda.territory.TemperatureRegistry;
 import fr.yezzipe.zelda.territory.TerritoryUtil;
@@ -85,7 +85,7 @@ public class Main extends JavaPlugin {
 	EntityManager.init();
 	BiomeRegistry.init();
 	TemperatureRegistry.init();
-	ItemBuilder.init();
+	Item.init();
 	BlockBuilder.init();
 	CustomBlock.initAll();
 	Recipe.init();

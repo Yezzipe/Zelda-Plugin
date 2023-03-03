@@ -25,16 +25,13 @@ import fr.yezzipe.zelda.events.enums.DamageType;
 import fr.yezzipe.zelda.inventory.CookingInventoryManager;
 import fr.yezzipe.zelda.inventory.InventoryManager;
 import fr.yezzipe.zelda.inventory.RaceInventoryManager;
-import fr.yezzipe.zelda.items.DropBuilder;
 import fr.yezzipe.zelda.items.GrapplingHookManager;
 import fr.yezzipe.zelda.items.HeartContainerManager;
-import fr.yezzipe.zelda.items.ItemBuilder;
 import fr.yezzipe.zelda.items.ItemTable;
-import fr.yezzipe.zelda.items.RingBuilder;
 import fr.yezzipe.zelda.items.RingCalculator;
-import fr.yezzipe.zelda.items.RupeeBuilder;
 import fr.yezzipe.zelda.items.ShadowCrystalManager;
 import fr.yezzipe.zelda.items.enums.Drop;
+import fr.yezzipe.zelda.items.enums.Food;
 import fr.yezzipe.zelda.items.enums.Item;
 import fr.yezzipe.zelda.items.enums.Ring;
 import fr.yezzipe.zelda.items.enums.Rupees;
@@ -311,74 +308,74 @@ public class Listener implements org.bukkit.event.Listener {
 	    if (proceed) {
 		List<ItemStack> items = e.getDrops();
 		if ((int) (Math.random() * 100.0D) <= 5)
-		    items.add(DropBuilder.build(Drop.HEART));
+		    items.add(Drop.HEART.getDrop());
 		if (e.getEntity() instanceof org.bukkit.entity.ElderGuardian
 			|| e.getEntity() instanceof org.bukkit.entity.EnderDragon
 			|| e.getEntity() instanceof org.bukkit.entity.Wither) {
 		    int rand = (int) (Math.random() * 10000.0D);
 		    if (rand <= 200) {
-			items.add(RupeeBuilder.build(Rupees.SILVER));
+			items.add(Rupees.SILVER.getRupee());
 		    } else if (rand <= 250) {
-			items.add(RupeeBuilder.build(Rupees.GOLD));
+			items.add(Rupees.GOLD.getRupee());
 		    }
 		    rand = (int) (Math.random() * 10000.0D);
 		    if (rand <= 500)
-			items.add(ItemBuilder.build(Item.HEART_PIECE));
+			items.add(Item.HEART_PIECE.getItem());
 		} else {
 		    int rand = (int) (Math.random() * 10000.0D);
 		    if (rand <= 50) {
-			items.add(RupeeBuilder.build(Rupees.GREEN));
+			items.add(Rupees.GREEN.getRupee());
 		    } else if (rand <= 10) {
-			items.add(RupeeBuilder.build(Rupees.BLUE));
+			items.add(Rupees.BLUE.getRupee());
 		    }
 		}
 	    } else {
 		List<ItemStack> items = e.getDrops();
 		if ((int) (Math.random() * 100.0D) <= 5)
-		    items.add(DropBuilder.build(Drop.HEART));
+		    items.add(Drop.HEART.getDrop());
 		if (e.getEntity() instanceof org.bukkit.entity.ElderGuardian
 			|| e.getEntity() instanceof org.bukkit.entity.EnderDragon
 			|| e.getEntity() instanceof org.bukkit.entity.Wither) {
 		    int rand = (int) (Math.random() * 10000.0D);
 		    if (rand <= 20) {
-			items.add(RupeeBuilder.build(Rupees.SILVER));
+			items.add(Rupees.SILVER.getRupee());
 		    } else if (rand <= 25) {
-			items.add(RupeeBuilder.build(Rupees.GOLD));
+			items.add(Rupees.GOLD.getRupee());
 		    }
 		    rand = (int) (Math.random() * 10000.0D);
 		    if (rand <= 50)
-			items.add(ItemBuilder.build(Item.HEART_PIECE));
+			items.add(Item.HEART_PIECE.getItem());
 		} else {
 		    int rand = (int) (Math.random() * 10000.0D);
 		    if (rand <= 5) {
-			items.add(RupeeBuilder.build(Rupees.GREEN));
+			items.add(Rupees.GREEN.getRupee());
 		    } else if (rand <= 1) {
-			items.add(RupeeBuilder.build(Rupees.BLUE));
+			items.add(Rupees.BLUE.getRupee());
 		    }
 		}
 	    }
 	} else {
 	    List<ItemStack> items = e.getDrops();
 	    if ((int) (Math.random() * 100.0D) <= 5)
-		items.add(DropBuilder.build(Drop.HEART));
+		items.add(Drop.HEART.getDrop());
 	    if (e.getEntity() instanceof org.bukkit.entity.ElderGuardian
 		    || e.getEntity() instanceof org.bukkit.entity.EnderDragon
 		    || e.getEntity() instanceof org.bukkit.entity.Wither) {
 		int rand = (int) (Math.random() * 10000.0D);
 		if (rand <= 20) {
-		    items.add(RupeeBuilder.build(Rupees.SILVER));
+		    items.add(Rupees.SILVER.getRupee());
 		} else if (rand <= 25) {
-		    items.add(RupeeBuilder.build(Rupees.GOLD));
+		    items.add(Rupees.GOLD.getRupee());
 		}
 		rand = (int) (Math.random() * 10000.0D);
 		if (rand <= 50)
-		    items.add(ItemBuilder.build(Item.HEART_PIECE));
+		    items.add(Item.HEART_PIECE.getItem());
 	    } else {
 		int rand = (int) (Math.random() * 10000.0D);
 		if (rand <= 5) {
-		    items.add(RupeeBuilder.build(Rupees.GREEN));
+		    items.add(Rupees.GREEN.getRupee());
 		} else if (rand <= 1) {
-		    items.add(RupeeBuilder.build(Rupees.BLUE));
+		    items.add(Rupees.BLUE.getRupee());
 		}
 	    }
 	}
@@ -820,11 +817,19 @@ public class Listener implements org.bukkit.event.Listener {
 	    return;
 	}
 	ItemStack item = e.getItem();
-	if (item.getType() == Material.MILK_BUCKET) {
+	EquipmentSlot s = e.getHand();
+	if (Food.isFood(item)) {
+	  e.setCancelled(false);  
+	  ItemStack i = p.getInventory().getItem(s);
+	  i.setAmount(i.getAmount()-1);
+	  System.out.println("Custom Food");
+	} else if (item.getType() == Material.MILK_BUCKET) {
 	    PData.resetExtraEffects();
 	    e.setCancelled(true);
-	    if (p.getGameMode() != GameMode.CREATIVE)
-		e.setItem(new ItemStack(Material.BUCKET));
+	    if (p.getGameMode() != GameMode.CREATIVE) {
+		ItemStack i = p.getInventory().getItem(s);
+		if (i.getType() == Material.MILK_BUCKET) i.setType(Material.BUCKET);
+	    }
 	}
     }
 
@@ -1352,22 +1357,22 @@ public class Listener implements org.bukkit.event.Listener {
 		newItems.add(i);
 	    int rand = (int) (Math.random() * 100.0D);
 	    if (rand <= 6)
-		newItems.add(ItemBuilder.build(Item.HEART_PIECE));
+		newItems.add(Item.HEART_PIECE.getItem());
 	    Pattern pattern = Pattern.compile("village", 10);
 	    Matcher matcher = pattern.matcher(table.getKey().toString());
 	    if (matcher.find()) {
 		rand = (int) (Math.random() * 10000.0D);
 		if (rand <= 200) {
-		    newItems.add(RupeeBuilder.build(Rupees.YELLOW));
+		    newItems.add(Rupees.YELLOW.getRupee());
 		} else if (rand <= 300) {
-		    newItems.add(RupeeBuilder.build(Rupees.RED));
+		    newItems.add(Rupees.RED.getRupee());
 		} else if (rand <= 350) {
-		    newItems.add(RupeeBuilder.build(Rupees.PURPLE));
+		    newItems.add(Rupees.PURPLE.getRupee());
 		}
 	    }
 	    if (item.getType() != Material.AIR) {
-		Ring ring = RingBuilder.getRingFromItem(item);
-		ItemStack itemRing = RingBuilder.build(ring);
+		Ring ring = Ring.getRingFromItem(item);
+		ItemStack itemRing = ring.getRing();
 		newItems.add(itemRing);
 	    }
 	    e.setLoot(newItems);
@@ -1421,11 +1426,11 @@ public class Listener implements org.bukkit.event.Listener {
 		return;
 	    int rand = (int) (Math.random() * 10000.0D);
 	    if (rand <= 200) {
-		block.getWorld().dropItemNaturally(block.getLocation(), RupeeBuilder.build(Rupees.GREEN));
+		block.getWorld().dropItemNaturally(block.getLocation(), Rupees.GREEN.getRupee());
 	    } else if (rand <= 50) {
-		block.getWorld().dropItemNaturally(block.getLocation(), RupeeBuilder.build(Rupees.BLUE));
+		block.getWorld().dropItemNaturally(block.getLocation(), Rupees.BLUE.getRupee());
 	    } else if (rand <= 500) {
-		block.getWorld().dropItemNaturally(block.getLocation(), DropBuilder.build(Drop.HEART));
+		block.getWorld().dropItemNaturally(block.getLocation(), Drop.HEART.getDrop());
 	    }
 	} else if (!hand.containsEnchantment(Enchantment.SILK_TOUCH)) {
 	    Player p = e.getPlayer();
@@ -1439,19 +1444,19 @@ public class Listener implements org.bukkit.event.Listener {
 		Collection<ItemStack> drops = block.getDrops(newHand);
 		int rand = (int) (Math.random() * 100000.0D);
 		if (rand <= 25) {
-		    drops.add(RupeeBuilder.build(Rupees.GOLD));
+		    drops.add(Rupees.GOLD.getRupee());
 		} else if (rand <= 75) {
-		    drops.add(RupeeBuilder.build(Rupees.SILVER));
+		    drops.add(Rupees.SILVER.getRupee());
 		} else if (rand <= 200) {
-		    drops.add(RupeeBuilder.build(Rupees.PURPLE));
+		    drops.add(Rupees.PURPLE.getRupee());
 		} else if (rand <= 450) {
-		    drops.add(RupeeBuilder.build(Rupees.RED));
+		    drops.add(Rupees.RED.getRupee());
 		} else if (rand <= 950) {
-		    drops.add(RupeeBuilder.build(Rupees.YELLOW));
+		    drops.add(Rupees.YELLOW.getRupee());
 		} else if (rand <= 1825) {
-		    drops.add(RupeeBuilder.build(Rupees.BLUE));
+		    drops.add(Rupees.BLUE.getRupee());
 		} else if (rand <= 3075) {
-		    drops.add(RupeeBuilder.build(Rupees.GREEN));
+		    drops.add(Rupees.GREEN.getRupee());
 		}
 		for (ItemStack drop : drops) {
 		    block.getWorld().dropItemNaturally(block.getLocation(), drop);

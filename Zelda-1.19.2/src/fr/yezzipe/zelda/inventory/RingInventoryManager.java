@@ -1,7 +1,6 @@
 package fr.yezzipe.zelda.inventory;
 
 import fr.yezzipe.zelda.entity.player.PlayerData;
-import fr.yezzipe.zelda.items.RingBuilder;
 import fr.yezzipe.zelda.items.enums.Ring;
 
 import java.util.ArrayList;
@@ -38,8 +37,8 @@ public class RingInventoryManager extends InventoryManager {
 	boolean shift = e.isShiftClick();
 	ItemStack currItem = (e.getCurrentItem() == null) ? new ItemStack(Material.AIR) : e.getCurrentItem();
 	ItemStack nextItem = (e.getCursor() == null) ? new ItemStack(Material.AIR) : e.getCursor();
-	boolean iscurrItemRing = RingBuilder.isRing(currItem);
-	boolean isnextItemRing = RingBuilder.isRing(nextItem);
+	boolean iscurrItemRing = Ring.isRing(currItem);
+	boolean isnextItemRing = Ring.isRing(nextItem);
 	if (blockedSlots.contains(Integer.valueOf(e.getRawSlot()))) {
 	    e.setCancelled(true);
 	} else if (shift && !iscurrItemRing && nextItem.getType() == Material.AIR) {
@@ -60,7 +59,7 @@ public class RingInventoryManager extends InventoryManager {
 	if (containBlocked) {
 	    e.setCancelled(true);
 	} else if (containRestricted) {
-	    boolean isNextItemRing = RingBuilder.isRing(nextItem);
+	    boolean isNextItemRing = Ring.isRing(nextItem);
 	    if (!isNextItemRing)
 		e.setCancelled(true);
 	}
@@ -70,7 +69,7 @@ public class RingInventoryManager extends InventoryManager {
 	List<Ring> rings = new ArrayList<>();
 	for (Integer i : restrictedSlots) {
 	    ItemStack item = e.getInventory().getItem(i.intValue());
-	    if (item != null) rings.add(RingBuilder.getRingFromItem(item));
+	    if (item != null) rings.add(Ring.getRingFromItem(item));
 	}
 	PData.setRings(rings);
     }
@@ -88,7 +87,7 @@ public class RingInventoryManager extends InventoryManager {
 	}
 	List<Ring> rings = PData.getRings();
 	for (int i = 0; i < max; i++) {
-	    ItemStack r = i < rings.size() ? RingBuilder.build(rings.get(i)) : new ItemStack(Material.AIR);
+	    ItemStack r = i < rings.size() ? rings.get(i).getRing() : new ItemStack(Material.AIR);
 	    inv.setItem(i+delta, r);
 	    restrictedSlots.add(Integer.valueOf(i+delta));
 	}

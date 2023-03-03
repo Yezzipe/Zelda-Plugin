@@ -2,11 +2,6 @@ package fr.yezzipe.zelda.commands;
 
 import fr.yezzipe.zelda.blocks.BlockBuilder;
 import fr.yezzipe.zelda.blocks.enums.BlockEnum;
-import fr.yezzipe.zelda.items.FoodBuilder;
-import fr.yezzipe.zelda.items.IngredientBuilder;
-import fr.yezzipe.zelda.items.ItemBuilder;
-import fr.yezzipe.zelda.items.RingBuilder;
-import fr.yezzipe.zelda.items.RupeeBuilder;
 import fr.yezzipe.zelda.items.enums.Food;
 import fr.yezzipe.zelda.items.enums.Ingredient;
 import fr.yezzipe.zelda.items.enums.Item;
@@ -30,7 +25,7 @@ public class ItemCommand implements CommandExecutor {
 			arg0.sendMessage("§cWrong Syntax in Command");
 			return false;
 		    }
-		    ItemStack item = RingBuilder.build(ring);
+		    ItemStack item = ring.getRing();
 		    p.getInventory().addItem(new ItemStack[] { item });
 		} else if (arg3[0].equals("item")) {
 		    Item item = Item.valueOf(arg3[1]);
@@ -38,16 +33,14 @@ public class ItemCommand implements CommandExecutor {
 			arg0.sendMessage("§cWrong Syntax in Command");
 			return false;
 		    }
-		    ItemStack customItem = ItemBuilder.build(item);
-		    p.getInventory().addItem(new ItemStack[] { customItem });
+		    p.getInventory().addItem(new ItemStack[] { item.getItem() });
 		} else if (arg3[0].equals("rupee")) {
 		    Rupees rupee = Rupees.valueOf(arg3[1]);
 		    if (rupee == null) {
 			arg0.sendMessage("§cWrong Syntax in Command");
 			return false;
 		    }
-		    ItemStack customItem = RupeeBuilder.build(rupee);
-		    p.getInventory().addItem(new ItemStack[] { customItem });
+		    p.getInventory().addItem(new ItemStack[] { rupee.getRupee() });
 		} else if (arg3[0].equals("block")) {
 		    BlockEnum b = BlockEnum.valueOf(arg3[1]);
 		    if (b == null) {
@@ -62,7 +55,7 @@ public class ItemCommand implements CommandExecutor {
 			arg0.sendMessage("§cWrong Syntax in Command");
 			return false;
 		    }
-		    ItemStack customItem = FoodBuilder.build(b);
+		    ItemStack customItem = b.getFood();
 		    p.getInventory().addItem(new ItemStack[] { customItem });
 		} else if (arg3[0].equals("ingredient")) {
 		    Ingredient b = Ingredient.valueOf(arg3[1]);
@@ -70,7 +63,7 @@ public class ItemCommand implements CommandExecutor {
 			arg0.sendMessage("§cWrong Syntax in Command");
 			return false;
 		    }
-		    ItemStack customItem = IngredientBuilder.build(b);
+		    ItemStack customItem = b.getIngredient();
 		    p.getInventory().addItem(new ItemStack[] { customItem });
 		} else {
 		    arg0.sendMessage("§cWrong Syntax in Command");
