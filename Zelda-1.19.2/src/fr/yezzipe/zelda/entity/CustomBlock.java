@@ -2,10 +2,12 @@ package fr.yezzipe.zelda.entity;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -35,9 +37,9 @@ import net.minecraft.world.entity.EnumItemSlot;
 import net.minecraft.world.entity.decoration.EntityArmorStand;
 
 public class CustomBlock {
-    private transient EntityArmorStand as;
-
     private transient ItemStack item;
+    
+    private transient HashMap<Player, EntityArmorStand> a = new HashMap<Player, EntityArmorStand>();
 
     private BlockEnum b;
 
@@ -66,10 +68,11 @@ public class CustomBlock {
 	Levelled level = (Levelled) light.getBlockData();
 	level.setLevel(lightLevel);
 	light.setBlockData(level);
-	CraftWorld cw = (CraftWorld) block.getWorld();
-	as = new EntityArmorStand((net.minecraft.world.level.World) cw.getHandle(), block.getX() + 0.5,
-		block.getY() - 1, block.getZ() + 0.5);
+	EntityArmorStand as = getArmorStand();
 	PacketPlayOutSpawnEntity packet1 = new PacketPlayOutSpawnEntity(as);
+	for (Player p : Bukkit.getOnlinePlayers()) {
+	    a.put(p, as);
+	}
 	PacketManager.sendPacketToAll(packet1);
 	DataWatcher watcher = new DataWatcher(as);
 	watcher.a(new DataWatcherObject<>(0, DataWatcherRegistry.a), Byte.valueOf((byte) (1 << 5)));
@@ -81,6 +84,13 @@ public class CustomBlock {
 	nbt2.getData().setString("LinkedArmorStand", uuid.toString());
 	setItem(b);
 
+    }
+    
+    private EntityArmorStand getArmorStand() {
+	CraftWorld cw =(CraftWorld) block.getWorld();
+	EntityArmorStand as = new EntityArmorStand((net.minecraft.world.level.World) cw.getHandle(), block.getX() + 0.5,
+		block.getY() - 1, block.getZ() + 0.5);
+	return as;
     }
 
     public UUID getUUID() {
@@ -94,9 +104,16 @@ public class CustomBlock {
 	Pair<EnumItemSlot, net.minecraft.world.item.ItemStack> pair = new Pair<EnumItemSlot, net.minecraft.world.item.ItemStack>(
 		EnumItemSlot.f, CraftItemStack.asNMSCopy((CraftItemStack) item));
 	list.add(pair);
-	PacketPlayOutEntityEquipment packet = new PacketPlayOutEntityEquipment(as.ae(), list);
-	PacketManager.sendPacketToAll(packet);
+	for (Player p : a.keySet()) {
+	    EntityArmorStand as = a.get(p);
+	    PacketPlayOutEntityEquipment packet = new PacketPlayOutEntityEquipment(as.ae(), list);
+	    PacketManager.sendPacket(p, packet);
+	}
 	this.item = item;
+    }
+    
+    public ItemStack getItem() {
+	return item;
     }
 
     public void setLightLevel(int l) {
@@ -107,15 +124,18 @@ public class CustomBlock {
     }
 
     public void remove() {
-	PacketPlayOutEntityDestroy packet = new PacketPlayOutEntityDestroy(as.ae());
-	PacketManager.sendPacketToAll(packet);
+	for (Player p : a.keySet()) {
+	    EntityArmorStand as = a.get(p);
+	    PacketPlayOutEntityDestroy packet = new PacketPlayOutEntityDestroy(as.ae());
+	    PacketManager.sendPacket(p, packet);
+	}
 	NBTBlock nbt = new NBTBlock(block);
 	block.setType(Material.AIR);
 	light.setType(Material.AIR);
 	nbt.getData().clearNBT();
 	Main.remove(folderPrefix + uuid);
 	item = null;
-	as = null;
+	a = null;
 	block = null;
 	light = null;
 	registry.unbind(getUUID());
@@ -139,6 +159,8 @@ public class CustomBlock {
     }
 
     public void sendToPlayer(Player player) {
+	EntityArmorStand as = getArmorStand();
+	a.put(player, as);
 	PacketPlayOutSpawnEntity packet1 = new PacketPlayOutSpawnEntity(as);
 	PacketManager.sendPacket(player, packet1);
 	DataWatcher watcher = new DataWatcher(as);
@@ -172,9 +194,12 @@ public class CustomBlock {
 	this.blockMemory = new CustomBlockMemory(block);
 	this.lightMemory = new CustomBlockMemory(light);
 	Main.write(String.valueOf(folderPrefix) + this.uuid, this);
-	PacketPlayOutEntityDestroy packet = new PacketPlayOutEntityDestroy(as.ae());
-	PacketManager.sendPacketToAll(packet);
-	as = null;
+	for (Player p : Bukkit.getOnlinePlayers()) {
+	    EntityArmorStand as = a.get(p);
+	    PacketPlayOutEntityDestroy packet = new PacketPlayOutEntityDestroy(as.ae());
+	    PacketManager.sendPacket(p, packet);
+	}
+	a = null;
     }
 
     public static void initAll() {
@@ -196,6 +221,7 @@ public class CustomBlock {
     public void init() {
 	this.block = blockMemory.getBlock();
 	this.light = lightMemory.getBlock();
+	a = new HashMap<Player, EntityArmorStand>();
 	NBTBlock nbt = new NBTBlock(block);
 	nbt.getData().setString("LinkedArmorStand", uuid.toString());
 	blockMemory = null;
@@ -203,10 +229,11 @@ public class CustomBlock {
 	Levelled level = (Levelled) light.getBlockData();
 	level.setLevel(lightLevel);
 	light.setBlockData(level);
-	CraftWorld cw = (CraftWorld) block.getWorld();
-	as = new EntityArmorStand((net.minecraft.world.level.World) cw.getHandle(), block.getX() + 0.5,
-		block.getY() - 1, block.getZ() + 0.5);
+	EntityArmorStand as = getArmorStand();
 	PacketPlayOutSpawnEntity packet1 = new PacketPlayOutSpawnEntity(as);
+	for (Player p : Bukkit.getOnlinePlayers()) {
+	    a.put(p, as);
+	}
 	PacketManager.sendPacketToAll(packet1);
 	DataWatcher watcher = new DataWatcher(as);
 	watcher.a(new DataWatcherObject<>(0, DataWatcherRegistry.a), Byte.valueOf((byte) (1 << 5)));

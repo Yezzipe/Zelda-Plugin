@@ -7,7 +7,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import fr.yezzipe.zelda.Main;
-import fr.yezzipe.zelda.entity.player.PlayerData;
 
 public class HeartContainerManager extends ItemManager {
 
@@ -22,7 +21,7 @@ public class HeartContainerManager extends ItemManager {
 	if (bonusHealth + 1 > 10)
 	    return;
 	PData.setBonusHealth(bonusHealth + 1);
-	PlayerData.applyAttributes(p, false);
+	PData.applyAttributes(false);
 	e.getItem().setAmount(e.getItem().getAmount() - 1);
 	(new BukkitRunnable() {
 	    public void run() {

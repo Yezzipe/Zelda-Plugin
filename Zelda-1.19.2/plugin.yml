@@ -37,6 +37,9 @@ commands:
   refreshchunks:
     description: command for admins
     permission: refreshchunks.use
+  star:
+    description: spawn a falling star
+    permission: star.use
 permissions:
   playerdata.use:
     description: command for admins
@@ -69,5 +72,8 @@ permissions:
     description: command for admins
     default: op
   refreshchunks.use:
+    description: command for admins
+    default: op
+  star.use:
     description: command for admins
     default: op

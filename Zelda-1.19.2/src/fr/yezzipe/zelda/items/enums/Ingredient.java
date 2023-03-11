@@ -1,5 +1,8 @@
 package fr.yezzipe.zelda.items.enums;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -86,7 +89,7 @@ public enum Ingredient {
     HOT_FOOTED_FROG(40, "Hot-Footed Frog", Material.CLOCK, 0, FoodBonus.HASTY, new int[] { 1, 1, 2, 3, 3 },
 	    new int[] { 60 }),
     HYDROMELON(5, "Hydromelon", Material.BEEF, 2, FoodBonus.CHILLY, new int[] { 1, 1, 1, 1, 1 }, new int[] { 150 }),
-    HYLIAN_RICE(29, "Hylian Rice", Material.BEEF, 4, FoodBonus.NONE, new int[] {}, new int[] { 60, 30 }),
+    HYLIAN_RICE(35, "Hylian Rice", Material.BEEF, 4, FoodBonus.NONE, new int[] {}, new int[] { 60, 30 }),
     HYLIAN_SHROOM(12, "Hylian Shroom", Material.BEEF, 2, FoodBonus.NONE, new int[] {}, new int[] { 30 }),
     HYRULE_BASS(43, "Hyrule Bass", Material.BEEF, 4, FoodBonus.NONE, new int[] {}, new int[] { 30 }),
     HYRULE_HERB(25, "Hyrule Herb", Material.BEEF, 4, FoodBonus.NONE, new int[] {}, new int[] { 30 }),
@@ -225,15 +228,63 @@ public enum Ingredient {
 	ItemStack item = new ItemStack(mat);
 	ItemMeta meta = item.getItemMeta();
 	meta.setCustomModelData(Integer.valueOf(modelData));
-	meta.setDisplayName(displayName);
+	List<String> lore = new ArrayList<String>();
+	if (health > 0)
+	    lore.add("§cHealth : " + health);
+	switch (bonus) {
+	case CHILLY:
+	    lore.add("§bChilly");
+	    break;
+	case ELECTRO:
+	    lore.add("§eElectro");
+	    break;
+	case ENDURING:
+	    lore.add("§eEnduring");
+	    break;
+	case ENERGIZING:
+	    lore.add("§aEnergizing");
+	    break;
+	case FIREPROOF:
+	    lore.add("§4Fireproof");
+	    break;
+	case HASTY:
+	    lore.add("§9Hasty");
+	    break;
+	case HEARTY:
+	    lore.add("§eAbsorbtion");
+	    break;
+	case MIGHTY:
+	    lore.add("§fMighty");
+	    break;
+	case NONE:
+	    break;
+	case RANDOM:
+	    lore.add("§fRandom");
+	    break;
+	case SNEAKY:
+	    lore.add("§dSneaky");
+	    break;
+	case SPICY:
+	    lore.add("§6Spicy");
+	    break;
+	case TOUGH:
+	    lore.add("§fTough");
+	    break;
+	default:
+	    break;
+	}
+	if (lore.size() > 0)
+	    meta.setLore(lore);
+	meta.setDisplayName("§f" + displayName);
 	item.setItemMeta(meta);
 	NBTItem nbt = new NBTItem(item);
 	nbt.setString("IngredientType", this.toString());
 	return nbt.getItem();
     }
-    
+
     public static boolean isIngredient(ItemStack item) {
-	if (item == null || item.getType() == Material.AIR) return false;
+	if (item == null || item.getType() == Material.AIR)
+	    return false;
 	return (new NBTItem(item)).getKeys().contains("IngredientType");
     }
 

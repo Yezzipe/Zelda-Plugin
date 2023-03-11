@@ -76,7 +76,6 @@ public class RingInventoryManager extends InventoryManager {
 
     protected void populateInventory() {
 	max = PData.getRingsNumber();
-	System.out.println(max);
 	delta = (9-max)/2;
 	ItemStack pane = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
 	for (int i = 0; i < delta; i++) {

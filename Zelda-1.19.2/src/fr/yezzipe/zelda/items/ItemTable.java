@@ -435,6 +435,19 @@ public class ItemTable {
 	rc32.add(green, Ring.FLAME_RING_1.getRing());
 	rc32.add(100.0D - 2.0D * red - 2.0D * orange - 3.0D * yellow - 3.0D * green, new ItemStack(Material.AIR));
 	itemTables.put("minecraft:chests/ruined_portal", rc32);
+	RandomCollection<ItemStack> rc33 = new RandomCollection<>();
+	rc33.add(red, Ring.TENACITY_RING_2.getRing());
+	rc33.add(red, Ring.KOKIRI_RING.getRing());
+	rc33.add(orange, Ring.FEATHER_RING.getRing());
+	rc33.add(orange, Ring.STRENGTH_RING_3.getRing());
+	rc33.add(yellow, Ring.BURNING_RING_2.getRing());
+	rc33.add(yellow, Ring.FLAME_RING_2.getRing());
+	rc33.add(yellow, Ring.HASTE_RING_1.getRing());
+	rc33.add(green, Ring.STRENGTH_RING_1.getRing());
+	rc33.add(green, Ring.FREEZING_RING_1.getRing());
+	rc33.add(green, Ring.FLAME_RING_1.getRing());
+	rc33.add(100.0D - 2.0D * red - 2.0D * orange - 3.0D * yellow - 3.0D * green, new ItemStack(Material.AIR));
+	itemTables.put("minecraft:chests/ancient_city", rc33);
     }
 
     public static RandomCollection<ItemStack> get(String lootTable) {

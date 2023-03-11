@@ -48,7 +48,7 @@ public class PlayerDataCommand implements CommandExecutor {
 		    PData.tick(true, true, true);
 		    PData.save();
 		    PlayerData.applyColors(p);
-		    PlayerData.applyAttributes(p, true);
+		    PData.applyAttributes(true);
 		    arg0.sendMessage("§aSuccessfully changed player's data !");
 		} else {
 		    arg0.sendMessage("§cWrong Syntax in Command");

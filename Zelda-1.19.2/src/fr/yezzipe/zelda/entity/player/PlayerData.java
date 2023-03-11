@@ -1,12 +1,14 @@
 package fr.yezzipe.zelda.entity.player;
 
 import fr.yezzipe.zelda.Main;
+import fr.yezzipe.zelda.entity.CustomBlock;
 import fr.yezzipe.zelda.entity.EntityManager;
 import fr.yezzipe.zelda.entity.PotionEffectMemory;
 import fr.yezzipe.zelda.entity.enums.Race;
 import fr.yezzipe.zelda.items.enums.Ring;
 import fr.yezzipe.zelda.territory.TemperatureRegistry;
 import fr.yezzipe.zelda.territory.Waypoint;
+import fr.yezzipe.zelda.territory.enums.Temperature;
 import fr.yezzipe.zelda.territory.structures.StableMemory;
 import fr.yezzipe.zelda.entity.PotionUtil;
 import net.md_5.bungee.api.ChatMessageType;
@@ -21,6 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -87,7 +90,29 @@ public class PlayerData {
 
     private int titleTask;
 
+    private int temperatureTask;
+
     private Biome currentBiome;
+
+    private int coldResistance;
+
+    private int heatResistance;
+
+    private int bonusDuration;
+
+    private int fireproof;
+
+    private int hastyBonus;
+
+    private int electro;
+
+    private int sneaky;
+
+    private int mighty;
+
+    private int tough;
+
+    private Temperature temperature;
 
     public PlayerData(Player player, Race race, double health) {
 	this.playerName = player.getName();
@@ -164,8 +189,9 @@ public class PlayerData {
 		    p.hidePlayer((Plugin) Main.getInstance(), player);
 	    }
 	}
+	setDuration(1);
 	PlayerData.applyColors(p);
-	PlayerData.applyAttributes(p, true);
+	applyAttributes(true);
 	applyEffects(true);
     }
 
@@ -203,6 +229,7 @@ public class PlayerData {
 	this.blockLight = p.getLocation().getBlock().getLightFromBlocks();
 	this.isUnderwater = isPlayerInWater();
 	tick(true, true, currentRace == Race.NONE || currentRace == null);
+	setTemperature();
 	potionTask = new BukkitRunnable() {
 
 	    @Override
@@ -221,6 +248,18 @@ public class PlayerData {
 			iterator.remove();
 		    }
 		}
+		if (bonusDuration > 0) {
+		    if (--bonusDuration == 0) {
+			setHeatResistance(0);
+			setColdResistance(0);
+			setFireproof(0);
+			setHastyBonus(0);
+			setElectro(0);
+			setSneaky(0);
+			setMighty(0);
+			setTough(0);
+		    }
+		}
 		if (mustRefresh)
 		    applyEffects(false);
 
@@ -237,6 +276,28 @@ public class PlayerData {
 		sendTemperature();
 	    }
 	}.runTaskTimerAsynchronously((Plugin) Main.getInstance(), 0, 2).getTaskId();
+	temperatureTask = new BukkitRunnable() {
+
+	    @Override
+	    public void run() {
+		if (!p.isOnline()) {
+		    cancel();
+		    return;
+		}
+		Random rand = new Random();
+		int r = Math.abs(rand.nextInt()) % 1000;
+		if (temperature == Temperature.EXTREME_COLD || temperature == Temperature.EXTREME_HOT) {
+		    if (!p.isDead() && r < 250)
+			p.damage(2);
+		} else if (temperature == Temperature.VERY_COLD || temperature == Temperature.VERY_HOT) {
+
+		    if (!p.isDead() && r < 200) {
+			p.damage(1);
+		    }
+		}
+	    }
+
+	}.runTaskTimer((Plugin) Main.getInstance(), 0, 60).getTaskId();
     }
 
     public void unregister() {
@@ -244,6 +305,7 @@ public class PlayerData {
 	Players.remove(getUuid().toString());
 	Bukkit.getScheduler().cancelTask(potionTask);
 	Bukkit.getScheduler().cancelTask(titleTask);
+	Bukkit.getScheduler().cancelTask(temperatureTask);
     }
 
     public void setHealth(double health) {
@@ -282,27 +344,28 @@ public class PlayerData {
 	this.rings = rings;
 	System.out.println(String.valueOf(this.playerName) + " equiped : " + rings);
 	Main.write(String.valueOf(folderPrefix) + this.uuid, this);
-	Player p = Bukkit.getPlayer(getUuid());
-	PlayerData.applyAttributes(p, false);
+	applyAttributes(false);
 	applyEffects(false);
     }
 
-    public static void applyAttributes(Player player, boolean reset) {
-	PlayerData playerData = getData(player);
+    public void applyAttributes(boolean reset) {
+	Player player = Bukkit.getPlayer(getUuid());
+	if (player.isDead())
+	    return;
 	HashMap<Attribute, Double> attributes = new HashMap<>();
 	player.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.1D);
 	player.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(20.0D);
 	double health = 20.0D;
-	switch (playerData.getCurrentRace()) {
+	switch (getCurrentRace()) {
 	case PIAF:
 	    health += 10.0D;
 	    break;
 	default:
 	    break;
 	}
-	health += (2 * playerData.getBonusHealth());
+	health += (2 * getBonusHealth());
 	attributes.put(Attribute.GENERIC_MAX_HEALTH, Double.valueOf(health));
-	List<Ring> rings = playerData.getRings();
+	List<Ring> rings = getRings();
 	if (rings != null && rings.contains(Ring.AGILITY_RING))
 	    if (attributes.containsKey(Attribute.GENERIC_MOVEMENT_SPEED)) {
 		attributes.put(Attribute.GENERIC_MOVEMENT_SPEED, Double
@@ -310,21 +373,25 @@ public class PlayerData {
 	    } else {
 		attributes.put(Attribute.GENERIC_MOVEMENT_SPEED, Double.valueOf(0.2D));
 	    }
+	else if (!attributes.containsKey(Attribute.GENERIC_MOVEMENT_SPEED)) {
+	    attributes.put(Attribute.GENERIC_MOVEMENT_SPEED, Double.valueOf(0.0D));
+	}
 	for (Attribute key : attributes.keySet()) {
 	    if (key == Attribute.GENERIC_MOVEMENT_SPEED) {
-		player.getAttribute(key).setBaseValue(0.1D * (1.0D + ((Double) attributes.get(key)).doubleValue()));
+		player.getAttribute(key)
+			.setBaseValue(0.1D * (1.0D + ((Double) attributes.get(key)).doubleValue() + 0.05 * hastyBonus));
 		continue;
 	    }
 	    if (key == Attribute.GENERIC_MAX_HEALTH) {
 		player.getAttribute(key).setBaseValue(((Double) attributes.get(key)).doubleValue());
 		if (reset) {
 		    player.setHealth(((Double) attributes.get(key)).doubleValue());
-		    playerData.setHealth(((Double) attributes.get(key)).doubleValue());
+		    setHealth(((Double) attributes.get(key)).doubleValue());
 		    continue;
 		}
-		player.setHealth((playerData.getHealth() > player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue())
+		player.setHealth((getHealth() > player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue())
 			? attributes.get(key).doubleValue()
-			: playerData.getHealth());
+			: Math.max(getHealth(), 0));
 	    }
 	}
     }
@@ -410,10 +477,16 @@ public class PlayerData {
 	PotionEffectMemory biomeEffect = BiomeRegistry.isMainBiome(this) && currentRace != Race.KOKIRI
 		? new PotionEffectMemory(PotionEffectType.REGENERATION, 2147483647, 0, false, false, false)
 		: null;
+
 	Collection<PotionEffectMemory> ringEffects = getPotionsFromRings();
 	Collection<PotionEffectMemory> raceEffect = getPotionFromRace();
 	Collection<PotionEffectMemory> potions = new ArrayList<>();
 	potions = PotionUtil.merge(ringEffects, biomeEffect);
+	if (temperature == Temperature.EXTREME_COLD || temperature == Temperature.EXTREME_HOT) {
+	    PotionEffectMemory tempEffect = new PotionEffectMemory(PotionEffectType.SLOW_DIGGING, 2147483647, 0, false,
+		    false, false);
+	    potions = PotionUtil.merge(potions, tempEffect);
+	}
 	potions = PotionUtil.merge(potions, raceEffect);
 	if (!resetEffects) {
 	    potions = PotionUtil.merge(potions, effects);
@@ -677,7 +750,17 @@ public class PlayerData {
 	return currentDimension;
     }
 
-    private boolean setCurrentDimension(Environment currentDimension) {
+    public boolean setCurrentDimension(Environment currentDimension) {
+	if (this.currentDimension != currentDimension)
+	    Bukkit.getScheduler().runTaskLater((Plugin) Main.getInstance(), new Runnable() {
+
+		@Override
+		public void run() {
+		    CustomBlock.initPlayer(Bukkit.getPlayer(getUuid()));
+
+		}
+
+	    }, 5);
 	this.currentDimension = currentDimension;
 	if (currentRace == Race.SHEIKAH) {
 	    return true;
@@ -725,6 +808,7 @@ public class PlayerData {
 	Player p = Bukkit.getPlayer(getUuid());
 	if (currentBiome != p.getLocation().getBlock().getBiome()) {
 	    currentBiome = p.getLocation().getBlock().getBiome();
+	    setTemperature();
 	    return true;
 	}
 	return false;
@@ -804,7 +888,7 @@ public class PlayerData {
     private void sendTemperature() {
 	Player p = Bukkit.getPlayer(getUuid());
 	String t;
-	switch (TemperatureRegistry.getTemperature(currentBiome)) {
+	switch (temperature) {
 	case EXTREME_COLD:
 	case EXTREME_HOT:
 	    t = "----";
@@ -823,7 +907,7 @@ public class PlayerData {
 	    break;
 	}
 	TextComponent text = new TextComponent(t);
-	text.setColor(TemperatureRegistry.getColor(TemperatureRegistry.getTemperature(currentBiome)));
+	text.setColor(TemperatureRegistry.getColor(temperature));
 	p.spigot().sendMessage(ChatMessageType.ACTION_BAR, text);
     }
 
@@ -850,5 +934,144 @@ public class PlayerData {
 	    return 0;
 	}
 
+    }
+
+    public void setColdResistance(int t) {
+	switch (currentRace) {
+	case GERUDO:
+	    coldResistance = -2 + t < -3 ? -3 : -2 + t > 3 ? 3 : -2 + t;
+	    break;
+	case GORON:
+	    coldResistance = -3 + t < -3 ? -3 : -3 + t > 3 ? 3 : -3 + t;
+	    break;
+	case HYLIA:
+	    coldResistance = 3 + t < -3 ? -3 : 3 + t > 3 ? 3 : 3 + t;
+	    break;
+	case HYLIEN:
+	    coldResistance = t < -3 ? -3 : t > 3 ? 3 : t;
+	    break;
+	case KOKIRI:
+	    coldResistance = -2 + t < -3 ? -3 : -2 + t > 3 ? 3 : -2 + t;
+	    break;
+	case NONE:
+	    coldResistance = t < -3 ? -3 : t > 3 ? 3 : t;
+	    break;
+	case PIAF:
+	    coldResistance = 2 + t < -3 ? -3 : 2 + t > 3 ? 3 : 2 + t;
+	    break;
+	case SHEIKAH:
+	    coldResistance = 1 + t < -3 ? -3 : 1 + t > 3 ? 3 : 1 + t;
+	    break;
+	case TWILI:
+	    coldResistance = 3 + t < -3 ? -3 : 3 + t > 3 ? 3 : 3 + t;
+	    break;
+	case ZORA:
+	    coldResistance = 2 + t < -3 ? -3 : 2 + t > 3 ? 3 : 2 + t;
+	    break;
+	default:
+	    break;
+	}
+	setTemperature();
+    }
+
+    public void setHeatResistance(int t) {
+	switch (currentRace) {
+	case GERUDO:
+	    heatResistance = 2 + t < -3 ? -3 : 2 + t > 3 ? 3 : 2 + t;
+	    break;
+	case GORON:
+	    heatResistance = 3 + t < -3 ? -3 : 3 + t > 3 ? 3 : 3 + t;
+	    break;
+	case HYLIA:
+	    heatResistance = 3 + t < -3 ? -3 : 3 + t > 3 ? 3 : 3 + t;
+	    break;
+	case HYLIEN:
+	    heatResistance = -2 + t < -3 ? -3 : -2 + t > 3 ? 3 : -1 + t;
+	    break;
+	case KOKIRI:
+	    heatResistance = 1 + t < -3 ? -3 : 1 + t > 3 ? 3 : 1 + t;
+	    break;
+	case NONE:
+	    heatResistance = t < -3 ? -3 : t > 3 ? 3 : t;
+	    break;
+	case PIAF:
+	    heatResistance = 1 + t < -3 ? -3 : 1 + t > 3 ? 3 : 1 + t;
+	    break;
+	case SHEIKAH:
+	    heatResistance = 1 + t < -3 ? -3 : 1 + t > 3 ? 3 : 1 + t;
+	    break;
+	case TWILI:
+	    heatResistance = -3 + t < -3 ? -3 : -3 + t > 3 ? 3 : -3 + t;
+	    break;
+	case ZORA:
+	    heatResistance = 1 + t < -3 ? -3 : 1 + t > 3 ? 3 : 1 + t;
+	    break;
+	default:
+	    break;
+	}
+	setTemperature();
+    }
+
+    public void setDuration(int duration) {
+	bonusDuration = duration;
+    }
+
+    public void setFireproof(int potency) {
+	fireproof = potency;
+    }
+
+    public int getFireproof() {
+	return fireproof;
+    }
+
+    public void setHastyBonus(int p) {
+	hastyBonus = p;
+	applyAttributes(false);
+    }
+
+    public void setElectro(int e) {
+	this.electro = e;
+    }
+
+    public double getElectro() {
+	return electro;
+    }
+
+    public void setSneaky(int s) {
+	this.sneaky = s;
+    }
+
+    public double getSneaky() {
+	return sneaky;
+    }
+
+    public void setMighty(int m) {
+	this.mighty = m;
+    }
+
+    public int getMighty() {
+	return mighty;
+    }
+
+    public void setTough(int t) {
+	this.tough = t;
+    }
+
+    public int getTough() {
+	return tough;
+    }
+
+    public void setTemperature() {
+	Temperature newTemp = Temperature.getFeeledTemperature(TemperatureRegistry.getTemperature(currentBiome),
+		coldResistance, heatResistance);
+	if (newTemp != temperature) {
+	    System.out.println("temp change");
+	    this.temperature = newTemp;
+	    applyEffects(false);
+	}
+    }
+
+    public Temperature getTemperature() {
+	return temperature;
     }
 }

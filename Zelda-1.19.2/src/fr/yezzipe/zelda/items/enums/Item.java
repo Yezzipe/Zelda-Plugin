@@ -6,7 +6,9 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.RecipeChoice;
+import org.bukkit.inventory.RecipeChoice.MaterialChoice;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.Plugin;
 
@@ -14,12 +16,13 @@ import de.tr7zw.nbtapi.NBTItem;
 import fr.yezzipe.zelda.Main;
 
 public enum Item {
-    GRAPPLING_HOOK(1, "Grappling Hook", Material.WARPED_FUNGUS_ON_A_STICK), LIGHT_BOW(1, "§6Light Bow", Material.BOW),
+    GRAPPLING_HOOK(1, "§fGrappling Hook", Material.WARPED_FUNGUS_ON_A_STICK), LIGHT_BOW(1, "§6Light Bow", Material.BOW),
     DARK_BOW(2, "§5Dark Bow", Material.BOW), ICE_BOW(3, "§bIce Bow", Material.BOW),
     ELECTRIC_BOW(4, "§eElectric Bow", Material.BOW), FIRE_BOW(5, "§cFire Bow", Material.BOW),
     BOMB_BOW(6, "§3Bomb Bow", Material.BOW), HEART_PIECE(2, "§cHeart Piece", Material.SLIME_BALL),
     HEART_CONTAINER(3, "§cHeart Container", Material.SLIME_BALL),
-    SHADOW_CRYSTAL(1, "§8Shadow Crystal", Material.PHANTOM_MEMBRANE);
+    SHADOW_CRYSTAL(1, "§8Shadow Crystal", Material.PHANTOM_MEMBRANE),
+    CATCHING_NET(92, "§fCatching Net", Material.CLOCK);
 
     private int modelData;
     private String displayName;
@@ -42,9 +45,10 @@ public enum Item {
 	nbt.setString("ItemType", this.toString());
 	return nbt.getItem();
     }
-    
+
     public static boolean isItem(ItemStack item) {
-	if (item == null || item.getType() == Material.AIR) return false;
+	if (item == null || item.getType() == Material.AIR)
+	    return false;
 	NBTItem nbt = new NBTItem(item);
 	return nbt.getKeys().contains("ItemType");
     }
@@ -113,6 +117,32 @@ public enum Item {
 	fire_bow.setIngredient('A', Material.BOW);
 	fire_bow.setIngredient('I', Material.IRON_BLOCK);
 	Bukkit.getServer().addRecipe((Recipe) fire_bow);
+	ItemStack bomb_bow_item = Item.BOMB_BOW.getItem();
+	ShapedRecipe bomb_bow = new ShapedRecipe(new NamespacedKey((Plugin) Main.getInstance(), "bomb-bow"),
+		bomb_bow_item);
+	bomb_bow.shape(new String[] { "FNT", "GBN", "IGF" });
+	bomb_bow.setIngredient('F', Material.FLINT);
+	bomb_bow.setIngredient('N', Material.NETHERITE_SCRAP);
+	bomb_bow.setIngredient('T', Material.TNT);
+	bomb_bow.setIngredient('G', Material.GUNPOWDER);
+	bomb_bow.setIngredient('B', Material.BOW);
+	bomb_bow.setIngredient('I', Material.IRON_BLOCK);
+	Bukkit.getServer().addRecipe(bomb_bow);
+	ItemStack catching_net_item = Item.CATCHING_NET.getItem();
+	ShapedRecipe catching_net = new ShapedRecipe(new NamespacedKey((Plugin) Main.getInstance(), "catching-net"),
+		catching_net_item);
+	catching_net.shape(new String[] { " WA", " SW", "S  " });
+	catching_net.setIngredient('W',
+		new MaterialChoice(Material.BLACK_WOOL, Material.BLUE_WOOL, Material.BROWN_WOOL, Material.CYAN_WOOL,
+			Material.GRAY_WOOL, Material.GREEN_WOOL, Material.LIGHT_BLUE_WOOL, Material.LIGHT_GRAY_WOOL,
+			Material.LIME_WOOL, Material.MAGENTA_WOOL, Material.ORANGE_WOOL, Material.PINK_WOOL,
+			Material.PURPLE_WOOL, Material.RED_WOOL, Material.WHITE_WOOL, Material.YELLOW_WOOL));
+	catching_net.setIngredient('S', Material.STICK);
+	catching_net.setIngredient('A', Material.STRING);
+	Bukkit.getServer().addRecipe(catching_net);
+	ShapelessRecipe wood = new ShapelessRecipe(new NamespacedKey((Plugin) Main.getInstance(), "wood"), Ingredient.WOOD.getIngredient());
+	wood.addIngredient(4, Material.STICK);
+	Bukkit.getServer().addRecipe(wood);
 	ItemStack heart_container = Item.HEART_CONTAINER.getItem();
 	ShapedRecipe heart_container_recipe_1 = new ShapedRecipe(
 		new NamespacedKey((Plugin) Main.getInstance(), "heart-container-1"), heart_container);

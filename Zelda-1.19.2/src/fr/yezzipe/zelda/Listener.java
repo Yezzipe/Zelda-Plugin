@@ -8,9 +8,6 @@ import fr.yezzipe.zelda.entity.CustomBlock;
 import fr.yezzipe.zelda.entity.EntityManager;
 import fr.yezzipe.zelda.entity.PacketReader;
 import fr.yezzipe.zelda.entity.enums.Race;
-import fr.yezzipe.zelda.entity.npc.CustomNPC;
-import fr.yezzipe.zelda.entity.npc.NPCHandler;
-import fr.yezzipe.zelda.entity.npc.NPCMemory;
 import fr.yezzipe.zelda.entity.player.PlayerData;
 import fr.yezzipe.zelda.events.EntityDarkDamageByEntityEvent;
 import fr.yezzipe.zelda.events.EntityElectricDamageByEntityEvent;
@@ -18,13 +15,12 @@ import fr.yezzipe.zelda.events.EntityFireDamageByEntityEvent;
 import fr.yezzipe.zelda.events.EntityIceDamageByEntityEvent;
 import fr.yezzipe.zelda.events.EntityLightDamageByEntityEvent;
 import fr.yezzipe.zelda.events.EntityPhysicalDamageByEntityEvent;
-import fr.yezzipe.zelda.events.LeftClickNPCEvent;
 import fr.yezzipe.zelda.events.ModifierCalculator;
-import fr.yezzipe.zelda.events.RightClickNPCEvent;
 import fr.yezzipe.zelda.events.enums.DamageType;
 import fr.yezzipe.zelda.inventory.CookingInventoryManager;
 import fr.yezzipe.zelda.inventory.InventoryManager;
 import fr.yezzipe.zelda.inventory.RaceInventoryManager;
+import fr.yezzipe.zelda.inventory.TraderInventoryManager;
 import fr.yezzipe.zelda.items.GrapplingHookManager;
 import fr.yezzipe.zelda.items.HeartContainerManager;
 import fr.yezzipe.zelda.items.ItemTable;
@@ -32,43 +28,55 @@ import fr.yezzipe.zelda.items.RingCalculator;
 import fr.yezzipe.zelda.items.ShadowCrystalManager;
 import fr.yezzipe.zelda.items.enums.Drop;
 import fr.yezzipe.zelda.items.enums.Food;
+import fr.yezzipe.zelda.items.enums.FoodBonus;
+import fr.yezzipe.zelda.items.enums.Ingredient;
 import fr.yezzipe.zelda.items.enums.Item;
 import fr.yezzipe.zelda.items.enums.Ring;
 import fr.yezzipe.zelda.items.enums.Rupees;
-import fr.yezzipe.zelda.territory.TerritoryChunk;
-import fr.yezzipe.zelda.territory.structures.StableMemory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.SoundCategory;
 import org.bukkit.attribute.Attribute;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.MultipleFacing;
+import org.bukkit.block.data.type.Leaves;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Chicken;
+import org.bukkit.entity.Cow;
+import org.bukkit.entity.ElderGuardian;
+import org.bukkit.entity.EnderDragon;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Parrot;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Sheep;
+import org.bukkit.entity.Vehicle;
+import org.bukkit.entity.WanderingTrader;
+import org.bukkit.entity.Wither;
 import org.bukkit.entity.minecart.StorageMinecart;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Result;
@@ -81,6 +89,7 @@ import org.bukkit.event.block.BlockFertilizeEvent;
 import org.bukkit.event.block.BlockIgniteEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.block.LeavesDecayEvent;
 import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -102,15 +111,18 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.inventory.InventoryPickupItemEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareAnvilEvent;
-import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
+import org.bukkit.event.player.PlayerFishEvent;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerPortalEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.event.world.ChunkUnloadEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.event.vehicle.VehicleMoveEvent;
 import org.bukkit.event.world.LootGenerateEvent;
 import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.EquipmentSlot;
@@ -141,17 +153,29 @@ public class Listener implements org.bukkit.event.Listener {
     public static HashMap<Player, List<Thread>> NPCTasks = new HashMap<>();
 
     @EventHandler
-    public void onPlayerChangeDimension(PlayerChangedWorldEvent e) {
+    public void onPlayerTp(PlayerTeleportEvent e) {
 	Player p = e.getPlayer();
 	PlayerData PData = PlayerData.getData(p);
-	PData.tick(false, true, false);
+	PData.setCurrentDimension(e.getTo().getWorld().getEnvironment());
+	PData.tick(true, false, false);
+    }
+
+    @EventHandler
+    public void onPlayerPortal(PlayerPortalEvent e) {
+	Player p = e.getPlayer();
+	PlayerData PData = PlayerData.getData(p);
+	PData.setCurrentDimension(e.getTo().getWorld().getEnvironment());
+	PData.tick(true, false, false);
     }
 
     @EventHandler
     public void onMove(final PlayerMoveEvent e) {
 	final Player p = e.getPlayer();
 	final PlayerData PData = PlayerData.getData(p);
-	PData.tick(false, false, false);
+	boolean dimC = PData.getCurrentDimension() != e.getTo().getWorld().getEnvironment();
+	if (dimC)
+	    PData.setCurrentDimension(e.getTo().getWorld().getEnvironment());
+	PData.tick(dimC, dimC, false);
 	if (PData.isAttachedToWall()) {
 	    p.setGravity(false);
 	    p.setVelocity(new Vector(0, 0, 0));
@@ -161,85 +185,45 @@ public class Listener implements org.bukkit.event.Listener {
 	}
 	if (!p.hasGravity())
 	    p.setGravity(true);
-	if (e.getTo().getChunk() != e.getFrom().getChunk()) {
-	    int x = e.getTo().getChunk().getX();
-	    int z = e.getTo().getChunk().getZ();
-	    Collection<Chunk> chunks2 = new ArrayList<>();
-	    for (int i = -3; i < 4; i++) {
-		for (int k = -3; k < 4; k++)
-		    chunks2.add(e.getTo().getWorld().getChunkAt(x + i, z + k));
-	    }
-	    Collection<Chunk> chunks = new ArrayList<>();
-	    for (int j = -1; j < 2; j++) {
-		for (int k = -1; k < 2; k++)
-		    chunks.add(e.getTo().getWorld().getChunkAt(x + j, z + k));
-	    }
-	    for (Chunk chunk : chunks) {
-		List<NPCMemory> memories = NPCHandler.getLoadedNPCsInChunk(chunk);
-		if (memories != null && !memories.isEmpty())
-		    for (NPCMemory memory : memories) {
-			CustomNPC brain = (CustomNPC) NPCHandler.NPCMemoryToBrain.get(memory);
-			NPCHandler.hideNPCBrain(p, brain);
-		    }
-	    }
-	    for (Chunk chunk : chunks2) {
-		List<CustomNPC> brains = NPCHandler.mountBrains(chunk);
-		if (brains != null)
-		    for (CustomNPC brain : brains) {
-			for (Player player : Bukkit.getOnlinePlayers())
-			    NPCHandler.createNPCShell(player, brain);
-		    }
-	    }
-	    Thread thread = new Thread(new Runnable() {
-		public void run() {
-		    if (!NPCHandler.allNPCLoaded(p)) {
-			NPCHandler.showNPCs(p);
-			NPCHandler.hideNPCs(p);
-		    }
-		    List<Thread> tasks = Listener.NPCTasks.get(p);
-		    if (tasks != null) {
-			if (!tasks.isEmpty()) {
-			    if (tasks.contains(Thread.currentThread()))
-				tasks.remove(Thread.currentThread());
-			    if (!tasks.isEmpty()) {
-				Thread nextThread = tasks.get(0);
-				nextThread.start();
-			    } else {
-				Listener.chargingNPCs.put(p, Boolean.valueOf(false));
-			    }
-			} else {
-			    Listener.chargingNPCs.put(p, Boolean.valueOf(false));
-			}
-		    } else {
-			Listener.chargingNPCs.put(p, Boolean.valueOf(false));
-		    }
-		    Listener.NPCTasks.put(p, tasks);
-		}
-	    });
-	    if (chargingNPCs.get(p) == null)
-		chargingNPCs.put(p, Boolean.valueOf(false));
-	    if (((Boolean) chargingNPCs.get(p)).booleanValue()) {
-		List<Thread> tasks = NPCTasks.get(p);
-		if (tasks == null)
-		    tasks = new ArrayList<>();
-		tasks.add(thread);
-		NPCTasks.put(p, tasks);
-	    } else {
-		chargingNPCs.put(p, Boolean.valueOf(true));
-		thread.start();
-	    }
-	    (new Thread(new Runnable() {
-		public void run() {
-		    Chunk chunk1 = e.getFrom().getChunk();
-		    Chunk chunk2 = e.getTo().getChunk();
-		    TerritoryChunk TChunk1 = new TerritoryChunk(chunk1);
-		    TerritoryChunk TChunk2 = new TerritoryChunk(chunk2);
-		    if (TChunk1.getOwningRace() != TChunk2.getOwningRace())
-			p.sendMessage("Leaving " + TChunk1.getOwningRace().toString() + " Domain and Entering "
-				+ TChunk2.getOwningRace().toString() + " Domain");
-		}
-	    })).start();
-	}
+	/*
+	 * if (e.getTo().getChunk() != e.getFrom().getChunk()) { int x =
+	 * e.getTo().getChunk().getX(); int z = e.getTo().getChunk().getZ();
+	 * Collection<Chunk> chunks2 = new ArrayList<>(); for (int i = -3; i < 4; i++) {
+	 * for (int k = -3; k < 4; k++) chunks2.add(e.getTo().getWorld().getChunkAt(x +
+	 * i, z + k)); } Collection<Chunk> chunks = new ArrayList<>(); for (int j = -1;
+	 * j < 2; j++) { for (int k = -1; k < 2; k++)
+	 * chunks.add(e.getTo().getWorld().getChunkAt(x + j, z + k)); } for (Chunk chunk
+	 * : chunks) { List<NPCMemory> memories =
+	 * NPCHandler.getLoadedNPCsInChunk(chunk); if (memories != null &&
+	 * !memories.isEmpty()) for (NPCMemory memory : memories) { CustomNPC brain =
+	 * (CustomNPC) NPCHandler.NPCMemoryToBrain.get(memory);
+	 * NPCHandler.hideNPCBrain(p, brain); } } for (Chunk chunk : chunks2) {
+	 * List<CustomNPC> brains = NPCHandler.mountBrains(chunk); if (brains != null)
+	 * for (CustomNPC brain : brains) { for (Player player :
+	 * Bukkit.getOnlinePlayers()) NPCHandler.createNPCShell(player, brain); } }
+	 * Thread thread = new Thread(new Runnable() { public void run() { if
+	 * (!NPCHandler.allNPCLoaded(p)) { NPCHandler.showNPCs(p);
+	 * NPCHandler.hideNPCs(p); } List<Thread> tasks = Listener.NPCTasks.get(p); if
+	 * (tasks != null) { if (!tasks.isEmpty()) { if
+	 * (tasks.contains(Thread.currentThread()))
+	 * tasks.remove(Thread.currentThread()); if (!tasks.isEmpty()) { Thread
+	 * nextThread = tasks.get(0); nextThread.start(); } else {
+	 * Listener.chargingNPCs.put(p, Boolean.valueOf(false)); } } else {
+	 * Listener.chargingNPCs.put(p, Boolean.valueOf(false)); } } else {
+	 * Listener.chargingNPCs.put(p, Boolean.valueOf(false)); }
+	 * Listener.NPCTasks.put(p, tasks); } }); if (chargingNPCs.get(p) == null)
+	 * chargingNPCs.put(p, Boolean.valueOf(false)); if (((Boolean)
+	 * chargingNPCs.get(p)).booleanValue()) { List<Thread> tasks = NPCTasks.get(p);
+	 * if (tasks == null) tasks = new ArrayList<>(); tasks.add(thread);
+	 * NPCTasks.put(p, tasks); } else { chargingNPCs.put(p, Boolean.valueOf(true));
+	 * thread.start(); } (new Thread(new Runnable() { public void run() { Chunk
+	 * chunk1 = e.getFrom().getChunk(); Chunk chunk2 = e.getTo().getChunk();
+	 * TerritoryChunk TChunk1 = new TerritoryChunk(chunk1); TerritoryChunk TChunk2 =
+	 * new TerritoryChunk(chunk2); if (TChunk1.getOwningRace() !=
+	 * TChunk2.getOwningRace()) p.sendMessage("Leaving " +
+	 * TChunk1.getOwningRace().toString() + " Domain and Entering " +
+	 * TChunk2.getOwningRace().toString() + " Domain"); } })).start(); }
+	 */
     }
 
     @EventHandler
@@ -283,6 +267,7 @@ public class Listener implements org.bukkit.event.Listener {
 	if (ent instanceof Player) {
 	    Player p = (Player) ent;
 	    PlayerData PData = PlayerData.getData(p);
+	    PData.setDuration(1);
 	    if (PData.getCurrentRace() == Race.PIAF) {
 		List<ItemStack> drops = e.getDrops();
 		ListIterator<ItemStack> iterator = drops.listIterator();
@@ -294,8 +279,105 @@ public class Listener implements org.bukkit.event.Listener {
 		    }
 		}
 	    }
+	} else if (ent instanceof Cow || ent instanceof Sheep) {
+	    Random rand = new Random();
+	    int r = Math.abs(rand.nextInt()) % 1000;
+	    if (r < 500) {
+		List<ItemStack> items = e.getDrops();
+		Iterator<ItemStack> iterator = items.iterator();
+		while (iterator.hasNext()) {
+		    ItemStack item = iterator.next();
+		    if (item.getType() == Material.BEEF || item.getType() == Material.MUTTON)
+			iterator.remove();
+		}
+		r = Math.abs(rand.nextInt()) % 1000;
+		int q = 1;
+		if (r < 100) {
+		    items.add(Ingredient.RAW_GOURMET_MEAT.getIngredient());
+		} else if (r < 300) {
+		    ItemStack p = Ingredient.RAW_PRIME_MEAT.getIngredient();
+		    q = Math.abs(rand.nextInt()) % 2 + 1;
+		    p.setAmount(q);
+		    items.add(p);
+		} else {
+		    ItemStack p = Ingredient.RAW_MEAT.getIngredient();
+		    q = Math.abs(rand.nextInt()) % 3 + 1;
+		    p.setAmount(q);
+		    items.add(p);
+		}
+	    }
+	} else if (ent instanceof Chicken) {
+	    Random rand = new Random();
+	    int r = Math.abs(rand.nextInt()) % 1000;
+	    if (r < 500) {
+		List<ItemStack> items = e.getDrops();
+		Iterator<ItemStack> iterator = items.iterator();
+		while (iterator.hasNext()) {
+		    ItemStack item = iterator.next();
+		    if (item.getType() == Material.CHICKEN)
+			iterator.remove();
+		}
+		r = Math.abs(rand.nextInt()) % 1000;
+		int q = 1;
+		if (r < 100) {
+		    items.add(Ingredient.RAW_WHOLE_BIRD.getIngredient());
+		} else if (r < 300) {
+		    ItemStack p = Ingredient.RAW_BIRD_THIGH.getIngredient();
+		    q = Math.abs(rand.nextInt()) % 2 + 1;
+		    p.setAmount(q);
+		    items.add(p);
+		} else {
+		    ItemStack p = Ingredient.RAW_BIRD_DRUMSTICK.getIngredient();
+		    q = Math.abs(rand.nextInt()) % 3 + 1;
+		    p.setAmount(q);
+		    items.add(p);
+		}
+	    }
+	} else if (ent instanceof Parrot) {
+	    Random rand = new Random();
+	    int r = Math.abs(rand.nextInt()) % 1000;
+	    if (r < 500) {
+		List<ItemStack> items = e.getDrops();
+		r = Math.abs(rand.nextInt()) % 1000;
+		int q = 1;
+		if (r < 100) {
+		    ItemStack p = Ingredient.RAW_BIRD_THIGH.getIngredient();
+		    p.setAmount(q);
+		    items.add(p);
+		} else {
+		    ItemStack p = Ingredient.RAW_BIRD_DRUMSTICK.getIngredient();
+		    q = Math.abs(rand.nextInt()) % 2 + 1;
+		    p.setAmount(q);
+		    items.add(p);
+		}
+	    }
+	} else if (ent instanceof Rabbit) {
+	    Random rand = new Random();
+	    int r = Math.abs(rand.nextInt()) % 1000;
+	    if (r < 500) {
+		List<ItemStack> items = e.getDrops();
+		Iterator<ItemStack> iterator = items.iterator();
+		while (iterator.hasNext()) {
+		    ItemStack item = iterator.next();
+		    if (item.getType() == Material.RABBIT)
+			iterator.remove();
+		}
+		r = Math.abs(rand.nextInt()) % 1000;
+		int q = 1;
+		if (r < 100) {
+		    ItemStack p = Ingredient.RAW_PRIME_MEAT.getIngredient();
+		    q = Math.abs(rand.nextInt()) % 2 + 1;
+		    p.setAmount(q);
+		    items.add(p);
+		} else {
+		    ItemStack p = Ingredient.RAW_MEAT.getIngredient();
+		    q = Math.abs(rand.nextInt()) % 3 + 1;
+		    p.setAmount(q);
+		    items.add(p);
+		}
+	    }
 	}
-	if (ede instanceof EntityDamageByEntityEvent) {
+	if (ede instanceof EntityDamageByEntityEvent && !(ent instanceof Player)) {
 	    boolean proceed = false;
 	    EntityDamageByEntityEvent event = (EntityDamageByEntityEvent) ede;
 	    if (event.getDamager() instanceof Player && !(event.getEntity() instanceof Player)) {
@@ -309,9 +391,8 @@ public class Listener implements org.bukkit.event.Listener {
 		List<ItemStack> items = e.getDrops();
 		if ((int) (Math.random() * 100.0D) <= 5)
 		    items.add(Drop.HEART.getDrop());
-		if (e.getEntity() instanceof org.bukkit.entity.ElderGuardian
-			|| e.getEntity() instanceof org.bukkit.entity.EnderDragon
-			|| e.getEntity() instanceof org.bukkit.entity.Wither) {
+		if (e.getEntity() instanceof ElderGuardian || e.getEntity() instanceof EnderDragon
+			|| e.getEntity() instanceof Wither) {
 		    int rand = (int) (Math.random() * 10000.0D);
 		    if (rand <= 200) {
 			items.add(Rupees.SILVER.getRupee());
@@ -329,13 +410,34 @@ public class Listener implements org.bukkit.event.Listener {
 			items.add(Rupees.BLUE.getRupee());
 		    }
 		}
+		if (e.getEntity() instanceof ElderGuardian) {
+		    Collection<Ingredient> c = Arrays.asList(new Ingredient[] { Ingredient.SHARD_OF_NAYDRAS_FANG,
+			    Ingredient.SHARD_OF_NAYDRAS_HORN, Ingredient.NAYDRAS_CLAW, Ingredient.NAYDRAS_SCALE });
+		    Random rand = new Random();
+		    int r = Math.abs(rand.nextInt()) % 1000;
+		    if (r < 100)
+			items.add(Main.randomInCollection(c).getIngredient());
+		} else if (e.getEntity() instanceof Wither) {
+		    Collection<Ingredient> c = Arrays.asList(new Ingredient[] { Ingredient.SHARD_OF_DINRAALS_FANG,
+			    Ingredient.SHARD_OF_DINRAALS_HORN, Ingredient.DINRAALS_CLAW, Ingredient.DINRAALS_SCALE });
+		    Random rand = new Random();
+		    int r = Math.abs(rand.nextInt()) % 1000;
+		    if (r < 100)
+			items.add(Main.randomInCollection(c).getIngredient());
+		} else if (e.getEntity() instanceof EnderDragon) {
+		    Collection<Ingredient> c = Arrays.asList(new Ingredient[] { Ingredient.SHARD_OF_FAROSHS_FANG,
+			    Ingredient.SHARD_OF_FAROSHS_HORN, Ingredient.FAROSHS_CLAW, Ingredient.FAROSHS_SCALE });
+		    Random rand = new Random();
+		    int r = Math.abs(rand.nextInt()) % 1000;
+		    if (r < 100)
+			items.add(Main.randomInCollection(c).getIngredient());
+		}
 	    } else {
 		List<ItemStack> items = e.getDrops();
 		if ((int) (Math.random() * 100.0D) <= 5)
 		    items.add(Drop.HEART.getDrop());
-		if (e.getEntity() instanceof org.bukkit.entity.ElderGuardian
-			|| e.getEntity() instanceof org.bukkit.entity.EnderDragon
-			|| e.getEntity() instanceof org.bukkit.entity.Wither) {
+		if (e.getEntity() instanceof ElderGuardian || e.getEntity() instanceof EnderDragon
+			|| e.getEntity() instanceof Wither) {
 		    int rand = (int) (Math.random() * 10000.0D);
 		    if (rand <= 20) {
 			items.add(Rupees.SILVER.getRupee());
@@ -352,6 +454,28 @@ public class Listener implements org.bukkit.event.Listener {
 		    } else if (rand <= 1) {
 			items.add(Rupees.BLUE.getRupee());
 		    }
+		}
+		if (e.getEntity() instanceof ElderGuardian) {
+		    Collection<Ingredient> c = Arrays.asList(new Ingredient[] { Ingredient.SHARD_OF_NAYDRAS_FANG,
+			    Ingredient.SHARD_OF_NAYDRAS_HORN, Ingredient.NAYDRAS_CLAW, Ingredient.NAYDRAS_SCALE });
+		    Random rand = new Random();
+		    int r = Math.abs(rand.nextInt()) % 1000;
+		    if (r < 100)
+			items.add(Main.randomInCollection(c).getIngredient());
+		} else if (e.getEntity() instanceof Wither) {
+		    Collection<Ingredient> c = Arrays.asList(new Ingredient[] { Ingredient.SHARD_OF_DINRAALS_FANG,
+			    Ingredient.SHARD_OF_DINRAALS_HORN, Ingredient.DINRAALS_CLAW, Ingredient.DINRAALS_SCALE });
+		    Random rand = new Random();
+		    int r = Math.abs(rand.nextInt()) % 1000;
+		    if (r < 100)
+			items.add(Main.randomInCollection(c).getIngredient());
+		} else if (e.getEntity() instanceof EnderDragon) {
+		    Collection<Ingredient> c = Arrays.asList(new Ingredient[] { Ingredient.SHARD_OF_FAROSHS_FANG,
+			    Ingredient.SHARD_OF_FAROSHS_HORN, Ingredient.FAROSHS_CLAW, Ingredient.FAROSHS_SCALE });
+		    Random rand = new Random();
+		    int r = Math.abs(rand.nextInt()) % 1000;
+		    if (r < 100)
+			items.add(Main.randomInCollection(c).getIngredient());
 		}
 	    }
 	} else {
@@ -377,6 +501,28 @@ public class Listener implements org.bukkit.event.Listener {
 		} else if (rand <= 1) {
 		    items.add(Rupees.BLUE.getRupee());
 		}
+	    }
+	    if (e.getEntity() instanceof ElderGuardian) {
+		Collection<Ingredient> c = Arrays.asList(new Ingredient[] { Ingredient.SHARD_OF_NAYDRAS_FANG,
+			Ingredient.SHARD_OF_NAYDRAS_HORN, Ingredient.NAYDRAS_CLAW, Ingredient.NAYDRAS_SCALE });
+		Random rand = new Random();
+		int r = Math.abs(rand.nextInt()) % 1000;
+		if (r < 50)
+		    items.add(Main.randomInCollection(c).getIngredient());
+	    } else if (e.getEntity() instanceof Wither) {
+		Collection<Ingredient> c = Arrays.asList(new Ingredient[] { Ingredient.SHARD_OF_DINRAALS_FANG,
+			Ingredient.SHARD_OF_DINRAALS_HORN, Ingredient.DINRAALS_CLAW, Ingredient.DINRAALS_SCALE });
+		Random rand = new Random();
+		int r = Math.abs(rand.nextInt()) % 1000;
+		if (r < 50)
+		    items.add(Main.randomInCollection(c).getIngredient());
+	    } else if (e.getEntity() instanceof EnderDragon) {
+		Collection<Ingredient> c = Arrays.asList(new Ingredient[] { Ingredient.SHARD_OF_FAROSHS_FANG,
+			Ingredient.SHARD_OF_FAROSHS_HORN, Ingredient.FAROSHS_CLAW, Ingredient.FAROSHS_SCALE });
+		Random rand = new Random();
+		int r = Math.abs(rand.nextInt()) % 1000;
+		if (r < 50)
+		    items.add(Main.randomInCollection(c).getIngredient());
 	    }
 	}
     }
@@ -453,7 +599,7 @@ public class Listener implements org.bukkit.event.Listener {
 		    break;
 
 		}
-	    } else if (nbt.getKeys().contains("BlockType") &&  e.getAction() == Action.RIGHT_CLICK_BLOCK) {
+	    } else if (nbt.getKeys().contains("BlockType") && e.getAction() == Action.RIGHT_CLICK_BLOCK) {
 		if (nbt.getString("BlockType").equals("Campfire_Unlit")) {
 		    Block b = e.getClickedBlock();
 		    if (b != null) {
@@ -517,18 +663,24 @@ public class Listener implements org.bukkit.event.Listener {
 			String uuid = nbt2.getData().getString("LinkedArmorStand");
 			CustomBlock cb = CustomBlock.getCustomBlock(uuid);
 			if (cb == null) {
-			 nbt2.getData().clearNBT();
-			 if (b.getType() == Material.BARRIER) b.setType(Material.AIR);
-			 if (b.getRelative(BlockFace.UP).getType() == Material.LIGHT) b.getRelative(BlockFace.UP).setType(Material.AIR);
+			    nbt2.getData().clearNBT();
+			    if (b.getType() == Material.BARRIER)
+				b.setType(Material.AIR);
+			    if (b.getRelative(BlockFace.UP).getType() == Material.LIGHT)
+				b.getRelative(BlockFace.UP).setType(Material.AIR);
 			} else {
-			cb.remove();
-			p.getInventory().addItem(BlockBuilder.build(BlockEnum.CAMP_UNLIT));
+			    cb.remove();
+			    p.getInventory().addItem(BlockBuilder.build(BlockEnum.CAMP_UNLIT));
 			}
 		    } else {
 			String uuid = nbt2.getData().getString("LinkedArmorStand");
 			CustomBlock cb = CustomBlock.getCustomBlock(uuid);
-			CookingInventoryManager manager = new CookingInventoryManager(p, cb);
-		    	p.openInventory(manager.getInventory());
+			ItemStack i = cb.getItem();
+			NBTItem nbt3 = new NBTItem(i);
+			if (nbt3.getString("BlockType").equals("Campfire_Lit")) {
+			    CookingInventoryManager manager = new CookingInventoryManager(p, cb);
+			    p.openInventory(manager.getInventory());
+			}
 		    }
 		}
 	    }
@@ -619,11 +771,10 @@ public class Listener implements org.bukkit.event.Listener {
 	}
     }
 
-    @EventHandler
-    public void onChunkUnload(ChunkUnloadEvent e) {
-	Chunk chunk = e.getChunk();
-	NPCHandler.dismountBrains(chunk);
-    }
+    /*
+     * @EventHandler public void onChunkUnload(ChunkUnloadEvent e) { Chunk chunk =
+     * e.getChunk(); NPCHandler.dismountBrains(chunk); }
+     */
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
@@ -631,54 +782,28 @@ public class Listener implements org.bukkit.event.Listener {
 	final Player p = e.getPlayer();
 	PacketReader reader = new PacketReader();
 	reader.inject(p);
-	final Chunk chunk = p.getLocation().getChunk();
-	final int x = chunk.getX();
-	final int z = chunk.getZ();
-	Collection<Chunk> chunks = new ArrayList<>();
-	for (int i = -3; i < 4; i++) {
-	    for (int j = -3; j < 4; j++)
-		chunks.add(chunk.getWorld().getChunkAt(x + i, z + j));
-	}
-	for (Chunk c : chunks)
-	    NPCHandler.mountBrains(c);
-	NPCHandler.createNPCs(p);
-	NPCHandler.hideNPCBrains(p);
-	Thread thread = new Thread(new Runnable() {
-	    public void run() {
-		NPCHandler.showNPCs(p);
-		NPCHandler.hideNPCs(p);
-		List<Thread> tasks = Listener.NPCTasks.get(p);
-		if (tasks != null) {
-		    if (!tasks.isEmpty()) {
-			if (tasks.contains(Thread.currentThread()))
-			    tasks.remove(Thread.currentThread());
-			if (!tasks.isEmpty()) {
-			    Thread nextThread = tasks.get(0);
-			    nextThread.start();
-			} else {
-			    Listener.chargingNPCs.put(p, Boolean.valueOf(false));
-			}
-		    } else {
-			Listener.chargingNPCs.put(p, Boolean.valueOf(false));
-		    }
-		} else {
-		    Listener.chargingNPCs.put(p, Boolean.valueOf(false));
-		}
-		Listener.NPCTasks.put(p, tasks);
-	    }
-	});
-	if (chargingNPCs.get(p) == null)
-	    chargingNPCs.put(p, Boolean.valueOf(false));
-	if (((Boolean) chargingNPCs.get(p)).booleanValue()) {
-	    List<Thread> tasks = NPCTasks.get(p);
-	    if (tasks == null)
-		tasks = new ArrayList<>();
-	    tasks.add(thread);
-	    NPCTasks.put(p, tasks);
-	} else {
-	    chargingNPCs.put(p, Boolean.valueOf(true));
-	    thread.start();
-	}
+	/*
+	 * final Chunk chunk = p.getLocation().getChunk(); final int x = chunk.getX();
+	 * final int z = chunk.getZ(); Collection<Chunk> chunks = new ArrayList<>(); for
+	 * (int i = -3; i < 4; i++) { for (int j = -3; j < 4; j++)
+	 * chunks.add(chunk.getWorld().getChunkAt(x + i, z + j)); } for (Chunk c :
+	 * chunks) NPCHandler.mountBrains(c); NPCHandler.createNPCs(p);
+	 * NPCHandler.hideNPCBrains(p); Thread thread = new Thread(new Runnable() {
+	 * public void run() { NPCHandler.showNPCs(p); NPCHandler.hideNPCs(p);
+	 * List<Thread> tasks = Listener.NPCTasks.get(p); if (tasks != null) { if
+	 * (!tasks.isEmpty()) { if (tasks.contains(Thread.currentThread()))
+	 * tasks.remove(Thread.currentThread()); if (!tasks.isEmpty()) { Thread
+	 * nextThread = tasks.get(0); nextThread.start(); } else {
+	 * Listener.chargingNPCs.put(p, Boolean.valueOf(false)); } } else {
+	 * Listener.chargingNPCs.put(p, Boolean.valueOf(false)); } } else {
+	 * Listener.chargingNPCs.put(p, Boolean.valueOf(false)); }
+	 * Listener.NPCTasks.put(p, tasks); } }); if (chargingNPCs.get(p) == null)
+	 * chargingNPCs.put(p, Boolean.valueOf(false)); if (((Boolean)
+	 * chargingNPCs.get(p)).booleanValue()) { List<Thread> tasks = NPCTasks.get(p);
+	 * if (tasks == null) tasks = new ArrayList<>(); tasks.add(thread);
+	 * NPCTasks.put(p, tasks); } else { chargingNPCs.put(p, Boolean.valueOf(true));
+	 * thread.start(); }
+	 */
 	p.setScoreboard(EntityManager.board);
 	p.getAttribute(Attribute.GENERIC_ATTACK_SPEED).setBaseValue(4.0D);
 	PData = PlayerData.getData(p);
@@ -689,28 +814,21 @@ public class Listener implements org.bukkit.event.Listener {
 	if (PData.getCurrentRace() == Race.NONE) {
 	    RaceInventoryManager manager = new RaceInventoryManager();
 	    p.openInventory(manager.getInventory());
-	    PlayerData.applyAttributes(p, true);
+	    PData.applyAttributes(true);
 	} else {
-	    PlayerData.applyAttributes(p, false);
+	    PData.applyAttributes(false);
 	    PlayerData.applyColors(p);
 	}
-	(new BukkitRunnable() {
-	    public void run() {
-		Collection<Chunk> chunks = new ArrayList<>();
-		for (int i = -1; i < 2; i++) {
-		    for (int j = -1; j < 2; j++)
-			chunks.add(chunk.getWorld().getChunkAt(x + i, z + j));
-		}
-		for (Chunk chunk : chunks) {
-		    List<NPCMemory> memories = NPCHandler.getLoadedNPCsInChunk(chunk);
-		    if (memories != null && !memories.isEmpty())
-			for (NPCMemory memory : memories) {
-			    CustomNPC brain = (CustomNPC) NPCHandler.NPCMemoryToBrain.get(memory);
-			    NPCHandler.hideNPCBrain(p, brain);
-			}
-		}
-	    }
-	}).runTaskLater((Plugin) Main.getInstance(), 20L);
+	/*
+	 * (new BukkitRunnable() { public void run() { Collection<Chunk> chunks = new
+	 * ArrayList<>(); for (int i = -1; i < 2; i++) { for (int j = -1; j < 2; j++)
+	 * chunks.add(chunk.getWorld().getChunkAt(x + i, z + j)); } for (Chunk chunk :
+	 * chunks) { List<NPCMemory> memories = NPCHandler.getLoadedNPCsInChunk(chunk);
+	 * if (memories != null && !memories.isEmpty()) for (NPCMemory memory :
+	 * memories) { CustomNPC brain = (CustomNPC)
+	 * NPCHandler.NPCMemoryToBrain.get(memory); NPCHandler.hideNPCBrain(p, brain); }
+	 * } } }).runTaskLater((Plugin) Main.getInstance(), 20L);
+	 */
     }
 
     @EventHandler
@@ -777,7 +895,7 @@ public class Listener implements org.bukkit.event.Listener {
 		    GrapplingHookManager manager = GrapplingHookManager.getFromPlayer(p);
 		    if (manager != null)
 			manager.cleanArrow();
-		    PlayerData.applyAttributes(p, true);
+		    PData.applyAttributes(true);
 		    PData.respawn();
 		    if (PData.getCurrentRace() == Race.PIAF) {
 			ItemStack chestplate = p.getInventory().getChestplate();
@@ -819,16 +937,142 @@ public class Listener implements org.bukkit.event.Listener {
 	ItemStack item = e.getItem();
 	EquipmentSlot s = e.getHand();
 	if (Food.isFood(item)) {
-	  e.setCancelled(false);  
-	  ItemStack i = p.getInventory().getItem(s);
-	  i.setAmount(i.getAmount()-1);
-	  System.out.println("Custom Food");
+	    e.setCancelled(true);
+	    ItemStack i = p.getInventory().getItem(s);
+	    if (p.getGameMode() != GameMode.CREATIVE)
+		i.setAmount(i.getAmount() - 1);
+	    NBTItem nbt = new NBTItem(item);
+	    FoodBonus b = FoodBonus.valueOf(nbt.getString("Bonus"));
+	    int health = nbt.getInteger("Health");
+	    p.setHealth(Math.min(p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue(), p.getHealth() + health));
+	    PData.setHealth(p.getHealth());
+	    if (health > 0)
+		p.playSound(p.getLocation(), "zelda.heart.get", SoundCategory.PLAYERS, 1000.0F, 1.0F);
+	    if (b != FoodBonus.RANDOM && b != FoodBonus.NONE) {
+		int potency = nbt.getInteger("Potency");
+		int duration;
+		switch (b) {
+		case CHILLY:
+		    duration = nbt.getInteger("Duration");
+		    PData.setColdResistance(0);
+		    PData.setHeatResistance(potency);
+		    PData.setHastyBonus(0);
+		    PData.setFireproof(0);
+		    PData.setElectro(0);
+		    PData.setSneaky(0);
+		    PData.setMighty(0);
+		    PData.setTough(0);
+		    PData.setDuration(duration);
+		    break;
+		case ELECTRO:
+		    duration = nbt.getInteger("Duration");
+		    PData.setColdResistance(0);
+		    PData.setHeatResistance(0);
+		    PData.setHastyBonus(0);
+		    PData.setFireproof(0);
+		    PData.setElectro(potency);
+		    PData.setSneaky(0);
+		    PData.setMighty(0);
+		    PData.setTough(0);
+		    PData.setDuration(duration);
+		    break;
+		case ENDURING:
+		    p.setSaturation(Math.min(20, p.getSaturation() + potency));
+		    break;
+		case ENERGIZING:
+		    p.setFoodLevel(Math.min(20, p.getFoodLevel() + potency));
+		    break;
+		case FIREPROOF:
+		    duration = nbt.getInteger("Duration");
+		    PData.setColdResistance(0);
+		    PData.setHeatResistance(0);
+		    PData.setHastyBonus(0);
+		    PData.setFireproof(potency);
+		    PData.setElectro(0);
+		    PData.setSneaky(0);
+		    PData.setMighty(0);
+		    PData.setTough(0);
+		    PData.setDuration(duration);
+		    break;
+		case HASTY:
+		    duration = nbt.getInteger("Duration");
+		    PData.setColdResistance(0);
+		    PData.setHeatResistance(0);
+		    PData.setHastyBonus(potency);
+		    PData.setFireproof(0);
+		    PData.setElectro(0);
+		    PData.setSneaky(0);
+		    PData.setMighty(0);
+		    PData.setTough(0);
+		    PData.setDuration(duration);
+		    break;
+		case HEARTY:
+		    p.setAbsorptionAmount(potency);
+		    break;
+		case MIGHTY:
+		    duration = nbt.getInteger("Duration");
+		    PData.setColdResistance(0);
+		    PData.setHeatResistance(0);
+		    PData.setHastyBonus(0);
+		    PData.setFireproof(0);
+		    PData.setElectro(0);
+		    PData.setSneaky(0);
+		    PData.setMighty(potency);
+		    PData.setTough(0);
+		    PData.setDuration(duration);
+		    break;
+		case NONE:
+		    break;
+		case RANDOM:
+		    break;
+		case SNEAKY:
+		    duration = nbt.getInteger("Duration");
+		    PData.setColdResistance(0);
+		    PData.setHeatResistance(0);
+		    PData.setHastyBonus(0);
+		    PData.setFireproof(0);
+		    PData.setElectro(0);
+		    PData.setSneaky(potency);
+		    PData.setMighty(0);
+		    PData.setTough(0);
+		    PData.setDuration(duration);
+		    break;
+		case SPICY:
+		    duration = nbt.getInteger("Duration");
+		    PData.setColdResistance(potency);
+		    PData.setHeatResistance(0);
+		    PData.setHastyBonus(0);
+		    PData.setFireproof(0);
+		    PData.setElectro(0);
+		    PData.setSneaky(0);
+		    PData.setMighty(0);
+		    PData.setTough(0);
+		    PData.setDuration(duration);
+		    break;
+		case TOUGH:
+		    duration = nbt.getInteger("Duration");
+		    PData.setColdResistance(0);
+		    PData.setHeatResistance(0);
+		    PData.setHastyBonus(0);
+		    PData.setFireproof(0);
+		    PData.setElectro(0);
+		    PData.setSneaky(0);
+		    PData.setMighty(0);
+		    PData.setTough(potency);
+		    PData.setDuration(duration);
+		    break;
+		default:
+		    break;
+
+		}
+	    }
 	} else if (item.getType() == Material.MILK_BUCKET) {
 	    PData.resetExtraEffects();
 	    e.setCancelled(true);
 	    if (p.getGameMode() != GameMode.CREATIVE) {
 		ItemStack i = p.getInventory().getItem(s);
-		if (i.getType() == Material.MILK_BUCKET) i.setType(Material.BUCKET);
+		if (i.getType() == Material.MILK_BUCKET)
+		    i.setType(Material.BUCKET);
 	    }
 	}
     }
@@ -921,6 +1165,15 @@ public class Listener implements org.bukkit.event.Listener {
 		    } else if (rings.contains(Ring.BURST_RING_1)) {
 			e.setDamage(e.getDamage() * 0.8D);
 		    }
+		} else if (e.getCause() == EntityDamageEvent.DamageCause.FIRE
+			|| e.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK
+			|| e.getCause() == EntityDamageEvent.DamageCause.HOT_FLOOR
+			|| e.getCause() == EntityDamageEvent.DamageCause.LAVA) {
+		    double modifier = 1d - 0.05 * PData.getFireproof();
+		    e.setDamage(e.getDamage() * modifier);
+		} else if (e.getCause() == EntityDamageEvent.DamageCause.LIGHTNING) {
+		    double modifier = 1d - 0.05 * PData.getElectro();
+		    e.setDamage(e.getDamage() * modifier);
 		}
 	    PData.setHealth(p.getHealth() - e.getFinalDamage());
 	}
@@ -999,6 +1252,7 @@ public class Listener implements org.bukkit.event.Listener {
     public void onEntityPhysicalDamageByEntity(EntityPhysicalDamageByEntityEvent e) {
 	org.bukkit.entity.Entity attacker = e.getAttacker();
 	org.bukkit.entity.Entity entity = e.getEntity();
+	double dist = attacker.getLocation().distanceSquared(entity.getLocation());
 	if (attacker instanceof Player && entity instanceof Player) {
 	    Player p = (Player) entity;
 	    PlayerData PData = PlayerData.getData(p);
@@ -1008,7 +1262,10 @@ public class Listener implements org.bukkit.event.Listener {
 	    List<Ring> rings2 = PData2.getRings();
 	    double mod1 = RingCalculator.getPhysicalArmorModifier(rings);
 	    double mod2 = RingCalculator.getPhysicalDamageModifier(rings2);
-	    e.setDamage(e.getDamage() * mod1 * mod2);
+	    double mod3 = 1d + 0.05 * PData2.getMighty();
+	    double mod4 = 1d - 0.05 * PData.getTough();
+	    double mod5 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * mod5);
 	    PData.setHealth(p.getHealth() - e.getEvent().getFinalDamage());
 	    PlayerData.checkApplyExtraEffect(entity, p2);
 	} else if (entity instanceof Player) {
@@ -1016,14 +1273,17 @@ public class Listener implements org.bukkit.event.Listener {
 	    PlayerData PData = PlayerData.getData(p);
 	    List<Ring> rings = PData.getRings();
 	    double mod1 = RingCalculator.getPhysicalArmorModifier(rings);
-	    e.setDamage(e.getDamage() * mod1);
+	    double mod2 = 1d - 0.05 * PData.getTough();
+	    e.setDamage(e.getDamage() * mod1 * mod2);
 	    PData.setHealth(p.getHealth() - e.getEvent().getFinalDamage());
 	} else if (attacker instanceof Player) {
 	    Player p = (Player) attacker;
 	    PlayerData PData = PlayerData.getData(p);
 	    List<Ring> rings = PData.getRings();
 	    double mod1 = RingCalculator.getPhysicalDamageModifier(rings);
-	    e.setDamage(e.getDamage() * mod1);
+	    double mod2 = 1d + 0.05 * PData.getMighty();
+	    double mod3 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3);
 	    PlayerData.checkApplyExtraEffect(entity, p);
 	}
     }
@@ -1032,6 +1292,7 @@ public class Listener implements org.bukkit.event.Listener {
     public void onEntityFireDamageByEntity(EntityFireDamageByEntityEvent e) {
 	org.bukkit.entity.Entity attacker = e.getAttacker();
 	org.bukkit.entity.Entity entity = e.getEntity();
+	double dist = attacker.getLocation().distanceSquared(entity.getLocation());
 	if (attacker instanceof Player && entity instanceof Player) {
 	    Player p = (Player) entity;
 	    PlayerData PData = PlayerData.getData(p);
@@ -1044,7 +1305,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    double mod2 = RingCalculator.getFireDamageModifier(rings2);
 	    double mod3 = ModifierCalculator.getResitanceModifier(DamageType.FIRE, PData.getCurrentRace());
 	    double mod4 = ModifierCalculator.getStrengthModifier(DamageType.FIRE, PData2.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * 1.45D);
+	    double mod5 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * mod5 * 1.45D);
 	    PData.setHealth(p.getHealth() - e.getEvent().getFinalDamage());
 	} else if (entity instanceof Player) {
 	    Player p = (Player) entity;
@@ -1065,7 +1327,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    }
 	    double mod1 = RingCalculator.getFireDamageModifier(rings);
 	    double mod2 = ModifierCalculator.getStrengthModifier(DamageType.FIRE, PData.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * 1.45D);
+	    double mod3 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * 1.45D);
 	}
     }
 
@@ -1073,6 +1336,7 @@ public class Listener implements org.bukkit.event.Listener {
     public void onEntityDarkDamageByEntity(EntityDarkDamageByEntityEvent e) {
 	org.bukkit.entity.Entity attacker = e.getAttacker();
 	org.bukkit.entity.Entity entity = e.getEntity();
+	double dist = attacker.getLocation().distanceSquared(entity.getLocation());
 	if (attacker instanceof Player && entity instanceof Player) {
 	    Player p = (Player) entity;
 	    PlayerData PData = PlayerData.getData(p);
@@ -1087,7 +1351,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    double mod2 = RingCalculator.getDarkDamageModifier(rings2);
 	    double mod3 = ModifierCalculator.getResitanceModifier(DamageType.DARK, PData.getCurrentRace());
 	    double mod4 = ModifierCalculator.getStrengthModifier(DamageType.DARK, PData2.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * 1.4D);
+	    double mod5 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * mod5 * 1.4D);
 	    PData.setHealth(p.getHealth() - e.getEvent().getFinalDamage());
 	} else if (entity instanceof Player) {
 	    Player p = (Player) entity;
@@ -1115,7 +1380,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    }
 	    double mod1 = RingCalculator.getDarkDamageModifier(rings);
 	    double mod2 = ModifierCalculator.getStrengthModifier(DamageType.DARK, PData.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * 1.4D);
+	    double mod3 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * 1.4D);
 	}
     }
 
@@ -1123,6 +1389,7 @@ public class Listener implements org.bukkit.event.Listener {
     public void onEntityElectricDamageByEntity(EntityElectricDamageByEntityEvent e) {
 	org.bukkit.entity.Entity attacker = e.getAttacker();
 	final org.bukkit.entity.Entity entity = e.getEntity();
+	double dist = attacker.getLocation().distanceSquared(entity.getLocation());
 	if (attacker instanceof Player && entity instanceof Player) {
 	    final Player p = (Player) entity;
 	    PlayerData PData = PlayerData.getData(p);
@@ -1141,7 +1408,9 @@ public class Listener implements org.bukkit.event.Listener {
 	    double mod2 = RingCalculator.getElectricDamageModifier(rings2);
 	    double mod3 = ModifierCalculator.getResitanceModifier(DamageType.ELECTRIC, PData.getCurrentRace());
 	    double mod4 = ModifierCalculator.getStrengthModifier(DamageType.ELECTRIC, PData2.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * 1.45D);
+	    double mod5 = 1d - 0.05 * PData.getElectro();
+	    double mod6 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * mod5 * mod6 * 1.45D);
 	    PData.setHealth(p.getHealth() - e.getEvent().getFinalDamage());
 	} else if (entity instanceof Player) {
 	    final Player p = (Player) entity;
@@ -1156,7 +1425,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    }).runTaskLaterAsynchronously((Plugin) Main.getInstance(), 40L);
 	    double mod1 = RingCalculator.getElectricArmorModifier(rings);
 	    double mod2 = ModifierCalculator.getResitanceModifier(DamageType.ELECTRIC, PData.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * 1.45D);
+	    double mod3 = 1d - 0.05 * PData.getElectro();
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * 1.45D);
 	    PData.setHealth(p.getHealth() - e.getEvent().getFinalDamage());
 	} else if (attacker instanceof Player) {
 	    final Player p = (Player) attacker;
@@ -1171,7 +1441,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    }).runTaskLaterAsynchronously((Plugin) Main.getInstance(), 40L);
 	    double mod1 = RingCalculator.getElectricDamageModifier(rings);
 	    double mod2 = ModifierCalculator.getStrengthModifier(DamageType.ELECTRIC, PData.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * 1.45D);
+	    double mod3 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * 1.45D);
 	}
     }
 
@@ -1179,6 +1450,7 @@ public class Listener implements org.bukkit.event.Listener {
     public void onEntityIceDamageByEntity(EntityIceDamageByEntityEvent e) {
 	org.bukkit.entity.Entity attacker = e.getAttacker();
 	org.bukkit.entity.Entity entity = e.getEntity();
+	double dist = attacker.getLocation().distanceSquared(entity.getLocation());
 	if (attacker instanceof Player && entity instanceof Player) {
 	    Player p = (Player) entity;
 	    PlayerData PData = PlayerData.getData(p);
@@ -1194,7 +1466,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    double mod2 = RingCalculator.getIceDamageModifier(rings2);
 	    double mod3 = ModifierCalculator.getResitanceModifier(DamageType.ICE, PData.getCurrentRace());
 	    double mod4 = ModifierCalculator.getStrengthModifier(DamageType.ICE, PData2.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * 1.25D);
+	    double mod5 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * mod5 * 1.25D);
 	    PData.setHealth(p.getHealth() - e.getEvent().getFinalDamage());
 	} else if (entity instanceof Player) {
 	    Player p = (Player) entity;
@@ -1218,7 +1491,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    }
 	    double mod1 = RingCalculator.getIceDamageModifier(rings);
 	    double mod2 = ModifierCalculator.getStrengthModifier(DamageType.ICE, PData.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * 1.25D);
+	    double mod3 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * 1.25D);
 	}
     }
 
@@ -1226,6 +1500,7 @@ public class Listener implements org.bukkit.event.Listener {
     public void onEntityLightDamageByEntity(EntityLightDamageByEntityEvent e) {
 	org.bukkit.entity.Entity attacker = e.getAttacker();
 	org.bukkit.entity.Entity entity = e.getEntity();
+	double dist = attacker.getLocation().distanceSquared(entity.getLocation());
 	if (attacker instanceof Player && entity instanceof Player) {
 	    Player p = (Player) entity;
 	    PlayerData PData = PlayerData.getData(p);
@@ -1240,7 +1515,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    double mod2 = RingCalculator.getLightDamageModifier(rings2);
 	    double mod3 = ModifierCalculator.getResitanceModifier(DamageType.LIGHT, PData.getCurrentRace());
 	    double mod4 = ModifierCalculator.getStrengthModifier(DamageType.LIGHT, PData2.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * 1.75D);
+	    double mod5 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * mod4 * mod5 * 1.75D);
 	    PData.setHealth(p.getHealth() - e.getEvent().getFinalDamage());
 	} else if (entity instanceof Player) {
 	    Player p = (Player) entity;
@@ -1263,7 +1539,8 @@ public class Listener implements org.bukkit.event.Listener {
 	    }
 	    double mod1 = RingCalculator.getLightDamageModifier(rings);
 	    double mod2 = ModifierCalculator.getStrengthModifier(DamageType.LIGHT, PData.getCurrentRace());
-	    e.setDamage(e.getDamage() * mod1 * mod2 * 1.75D);
+	    double mod3 = PData.getCurrentRace() == Race.PIAF ? 1d + 1d / (1 + Math.exp(-0.1 * (dist - 900))) : 1d;
+	    e.setDamage(e.getDamage() * mod1 * mod2 * mod3 * 1.75D);
 	}
     }
 
@@ -1358,17 +1635,13 @@ public class Listener implements org.bukkit.event.Listener {
 	    int rand = (int) (Math.random() * 100.0D);
 	    if (rand <= 6)
 		newItems.add(Item.HEART_PIECE.getItem());
-	    Pattern pattern = Pattern.compile("village", 10);
-	    Matcher matcher = pattern.matcher(table.getKey().toString());
-	    if (matcher.find()) {
-		rand = (int) (Math.random() * 10000.0D);
-		if (rand <= 200) {
-		    newItems.add(Rupees.YELLOW.getRupee());
-		} else if (rand <= 300) {
-		    newItems.add(Rupees.RED.getRupee());
-		} else if (rand <= 350) {
-		    newItems.add(Rupees.PURPLE.getRupee());
-		}
+	    rand = (int) (Math.random() * 10000.0D);
+	    if (rand <= 200) {
+		newItems.add(Rupees.YELLOW.getRupee());
+	    } else if (rand <= 300) {
+		newItems.add(Rupees.RED.getRupee());
+	    } else if (rand <= 350) {
+		newItems.add(Rupees.PURPLE.getRupee());
 	    }
 	    if (item.getType() != Material.AIR) {
 		Ring ring = Ring.getRingFromItem(item);
@@ -1394,14 +1667,14 @@ public class Listener implements org.bukkit.event.Listener {
 	    Chest chest = (Chest) holder;
 	    if (lootChest.contains(chest.getLocation())) {
 		Player p = (Player) e.getPlayer();
-		p.playSound(chest.getLocation(), "zelda.open_chest", SoundCategory.MUSIC, 1000.0F, 1.0F);
+		p.playSound(chest.getLocation(), "zelda.open_chest", SoundCategory.BLOCKS, 1000.0F, 1.0F);
 		lootChest.remove(chest.getLocation());
 	    }
 	} else if (holder instanceof StorageMinecart) {
 	    StorageMinecart minecart = (StorageMinecart) holder;
 	    if (lootMinecart.contains(minecart.getUniqueId())) {
 		Player p = (Player) e.getPlayer();
-		p.playSound(minecart.getLocation(), "zelda.open_chest", SoundCategory.MUSIC, 1000.0F, 1.0F);
+		p.playSound(minecart.getLocation(), "zelda.open_chest", SoundCategory.BLOCKS, 1000.0F, 1.0F);
 		lootMinecart.remove(minecart.getUniqueId());
 	    }
 	}
@@ -1419,6 +1692,113 @@ public class Listener implements org.bukkit.event.Listener {
 	ItemStack hand = e.getPlayer().getInventory().getItemInMainHand();
 	if (e.getPlayer().getGameMode() != GameMode.SURVIVAL)
 	    return;
+	if (hand == null || hand.getType() == Material.AIR) {
+	    Random rand = new Random();
+
+	    int r = Math.abs(rand.nextInt()) % 1000;
+	    Collection<Ingredient> normal = Arrays.asList(
+		    new Ingredient[] { Ingredient.HYLIAN_SHROOM, Ingredient.SWIFT_CARROT, Ingredient.STAMELLA_SHROOM,
+			    Ingredient.HEARTY_RADISH, Ingredient.BIG_HEARTY_RADISH, Ingredient.HYRULE_HERB,
+			    Ingredient.FORTIFIED_PUMPKIN, Ingredient.SWIFT_VIOLET, Ingredient.MIGHTY_THISTLE });
+	    Collection<Ingredient> warm = Arrays
+		    .asList(new Ingredient[] { Ingredient.ENDURA_CARROT, Ingredient.ZAPSHROOM, Ingredient.ENDURA_SHROOM,
+			    Ingredient.RAZORSHROOM, Ingredient.SPICY_PEPPER, Ingredient.SUNSHROOM, Ingredient.ARMORANTH,
+			    Ingredient.ELECTRIC_SAFFLINA, Ingredient.WARM_SAFFLINA });
+	    Collection<Ingredient> cold = Arrays.asList(
+		    new Ingredient[] { Ingredient.RUSHROOM, Ingredient.SILENT_SHROOM, Ingredient.BIG_HEARTY_TRUFFLE,
+			    Ingredient.HEARTY_TRUFFLE, Ingredient.IRONSHROOM, Ingredient.CHILLSHROOM,
+			    Ingredient.COOL_SAFFLINA, Ingredient.BLUE_NIGHTSHADE, Ingredient.SILENT_PRINCESS });
+	    if (r < 50
+		    && (mat == Material.FERN || mat == Material.LARGE_FERN || mat == Material.GRASS
+			    || mat == Material.TALL_GRASS || mat == Material.DEAD_BUSH)
+		    && block.getMetadata("NoRupee").isEmpty()) {
+		switch (block.getBiome()) {
+		case MEADOW:
+		case MUSHROOM_FIELDS:
+		case OLD_GROWTH_BIRCH_FOREST:
+		case SUNFLOWER_PLAINS:
+		case PLAINS:
+		case BIRCH_FOREST:
+		case FOREST:
+		case FLOWER_FOREST:
+		case BEACH:
+		    block.getWorld().dropItemNaturally(block.getLocation(),
+			    Main.randomInCollection(normal).getIngredient());
+		    break;
+		case SPARSE_JUNGLE:
+		case WINDSWEPT_SAVANNA:
+		case SWAMP:
+		case SAVANNA_PLATEAU:
+		case MANGROVE_SWAMP:
+		case SAVANNA:
+		case JUNGLE:
+		case WOODED_BADLANDS:
+		case BADLANDS:
+		case BAMBOO_JUNGLE:
+		case DARK_FOREST:
+		case ERODED_BADLANDS:
+		case DESERT:
+		    block.getWorld().dropItemNaturally(block.getLocation(),
+			    Main.randomInCollection(warm).getIngredient());
+		    break;
+		case OLD_GROWTH_PINE_TAIGA:
+		case FROZEN_PEAKS:
+		case GROVE:
+		case OLD_GROWTH_SPRUCE_TAIGA:
+		case SNOWY_BEACH:
+		case SNOWY_TAIGA:
+		case TAIGA:
+		case SNOWY_PLAINS:
+		case SNOWY_SLOPES:
+		case STONY_SHORE:
+		case WINDSWEPT_FOREST:
+		case WINDSWEPT_GRAVELLY_HILLS:
+		case WINDSWEPT_HILLS:
+		case STONY_PEAKS:
+		case JAGGED_PEAKS:
+		case ICE_SPIKES:
+		    block.getWorld().dropItemNaturally(block.getLocation(),
+			    Main.randomInCollection(cold).getIngredient());
+		    break;
+		default:
+		    break;
+		}
+	    }
+	    r = Math.abs(rand.nextInt()) % 1000;
+	    if (r <= 50 && (mat == Material.ACACIA_LEAVES || mat == Material.BIRCH_LEAVES
+		    || mat == Material.MANGROVE_LEAVES || mat == Material.OAK_LEAVES || mat == Material.AZALEA_LEAVES
+		    || mat == Material.FLOWERING_AZALEA_LEAVES || mat == Material.JUNGLE_LEAVES)) {
+		Collection<Ingredient> jungle = Arrays.asList(new Ingredient[] { Ingredient.HYDROMELON,
+			Ingredient.MIGHTY_BANANAS, Ingredient.HEARTY_DURIAN, Ingredient.PALM_FRUIT });
+		switch (e.getBlock().getType()) {
+		case ACACIA_LEAVES:
+		case BIRCH_LEAVES:
+		    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+			    Ingredient.VOLTFRUIT.getIngredient());
+		    break;
+		case MANGROVE_LEAVES:
+		    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+			    Ingredient.FLEET_LOTUS_SEEDS.getIngredient());
+		    break;
+		case OAK_LEAVES:
+		    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+			    Ingredient.APPLE.getIngredient());
+		    break;
+		case AZALEA_LEAVES:
+		case FLOWERING_AZALEA_LEAVES:
+		    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+			    Ingredient.WILDBERRY.getIngredient());
+		    break;
+		case JUNGLE_LEAVES:
+		    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+			    Main.randomInCollection(jungle).getIngredient());
+		    break;
+		default:
+		    break;
+		}
+	    }
+	    return;
+	}
 	if (!hand.containsEnchantment(Enchantment.SILK_TOUCH) && (mat == Material.FERN || mat == Material.LARGE_FERN
 		|| mat == Material.GRASS || mat == Material.TALL_GRASS || mat == Material.DEAD_BUSH)) {
 	    if (!block.getMetadata("NoRupee").isEmpty()
@@ -1437,7 +1817,6 @@ public class Listener implements org.bukkit.event.Listener {
 	    PlayerData PData = PlayerData.getData(p);
 	    if (PData.getCurrentRace() == Race.GORON && mat.toString().contains("ORE")) {
 		e.setDropItems(false);
-
 		ItemStack newHand = new ItemStack(hand.getType());
 		newHand.addUnsafeEnchantment(Enchantment.LOOT_BONUS_BLOCKS,
 			hand.getEnchantmentLevel(Enchantment.LOOT_BONUS_BLOCKS) + 1);
@@ -1458,8 +1837,115 @@ public class Listener implements org.bukkit.event.Listener {
 		} else if (rand <= 3075) {
 		    drops.add(Rupees.GREEN.getRupee());
 		}
+		Random random = new Random();
+		int r = Math.abs(random.nextInt()) % 10000;
+		Collection<Ingredient> rare = Arrays.asList(new Ingredient[] { Ingredient.TOPAZ, Ingredient.RUBY,
+			Ingredient.SAPPHIRE, Ingredient.DIAMOND });
+		Collection<Ingredient> normal = Arrays
+			.asList(new Ingredient[] { Ingredient.AMBER, Ingredient.OPAL, Ingredient.LUMINOUS_STONE });
+		if (r <= 100) {
+		    drops.add(Main.randomInCollection(rare).getIngredient());
+		} else if (r <= 300) {
+		    drops.add(Main.randomInCollection(normal).getIngredient());
+		}
 		for (ItemStack drop : drops) {
 		    block.getWorld().dropItemNaturally(block.getLocation(), drop);
+		}
+	    } else {
+		NBTItem nbtI = new NBTItem(hand);
+		if (nbtI.getKeys().contains("ItemType")) {
+		    Item i = Item.valueOf(nbtI.getString("ItemType"));
+		    if (i == Item.CATCHING_NET && block.getBlockData() instanceof Leaves) {
+			Leaves l = (Leaves) block.getBlockData();
+			Collection<Ingredient> mangrove = Arrays.asList(new Ingredient[] { Ingredient.HOT_FOOTED_FROG,
+				Ingredient.TIRELESS_FROG, Ingredient.WARM_DARNER });
+			Collection<Ingredient> spruce = Arrays
+				.asList(new Ingredient[] { Ingredient.WINTERWING_BUTTERFLY, Ingredient.COLD_DARNER });
+			Collection<Ingredient> acacia = Arrays
+				.asList(new Ingredient[] { Ingredient.SUMMERWING_BUTTERFLY,
+					Ingredient.SMOTHERWING_BUTTERFLY, Ingredient.HEARTY_LIZARD });
+			Collection<Ingredient> birch = Arrays.asList(new Ingredient[] { Ingredient.RUGGED_RHINO_BEETLE,
+				Ingredient.THUNDERWING_BUTTERFLY, Ingredient.ELECTRIC_DARNER });
+			Collection<Ingredient> dark_oak = Arrays
+				.asList(new Ingredient[] { Ingredient.SUNSET_FIREFLY, Ingredient.BLADED_RHINO_BEETLE });
+			Collection<Ingredient> oak = Arrays
+				.asList(new Ingredient[] { Ingredient.RESTLESS_CRICKET, Ingredient.HIGHTAIL_LIZARD });
+			Collection<Ingredient> jungle = Arrays.asList(
+				new Ingredient[] { Ingredient.ENERGETIC_RHINO_BEETLE, Ingredient.FIREPROOF_LIZARD });
+			Collection<Ingredient> azalea = Arrays.asList(new Ingredient[] { Ingredient.FAIRY });
+			Random rand = new Random();
+			int r = Math.abs(rand.nextInt() % 10000);
+			if (!l.isPersistent() && r < 500) {
+			    ItemStack d = new ItemStack(Material.AIR);
+			    switch (mat) {
+			    case MANGROVE_LEAVES:
+				d = Main.randomInCollection(mangrove).getIngredient();
+				break;
+			    case SPRUCE_LEAVES:
+				d = Main.randomInCollection(spruce).getIngredient();
+				break;
+			    case ACACIA_LEAVES:
+				d = Main.randomInCollection(acacia).getIngredient();
+				break;
+			    case BIRCH_LEAVES:
+				d = Main.randomInCollection(birch).getIngredient();
+				break;
+			    case DARK_OAK_LEAVES:
+				d = Main.randomInCollection(dark_oak).getIngredient();
+				break;
+			    case OAK_LEAVES:
+				d = Main.randomInCollection(oak).getIngredient();
+				break;
+			    case JUNGLE_LEAVES:
+				d = Main.randomInCollection(jungle).getIngredient();
+				break;
+			    case AZALEA_LEAVES:
+			    case FLOWERING_AZALEA_LEAVES:
+				d = Main.randomInCollection(azalea).getIngredient();
+				break;
+			    default:
+				break;
+			    }
+			    if (d.getType() != Material.AIR)
+				block.getWorld().dropItemNaturally(block.getLocation(), d);
+			}
+		    }
+		} else if (mat == Material.ACACIA_LEAVES || mat == Material.BIRCH_LEAVES
+			|| mat == Material.MANGROVE_LEAVES || mat == Material.OAK_LEAVES
+			|| mat == Material.AZALEA_LEAVES || mat == Material.FLOWERING_AZALEA_LEAVES
+			|| mat == Material.JUNGLE_LEAVES) {
+		    Random rand = new Random();
+		    int r = Math.abs(rand.nextInt()) % 1000;
+		    if (r <= 50) {
+			Collection<Ingredient> jungle = Arrays.asList(new Ingredient[] { Ingredient.HYDROMELON,
+				Ingredient.MIGHTY_BANANAS, Ingredient.HEARTY_DURIAN, Ingredient.PALM_FRUIT });
+			switch (e.getBlock().getType()) {
+			case ACACIA_LEAVES:
+			case BIRCH_LEAVES:
+			    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+				    Ingredient.VOLTFRUIT.getIngredient());
+			    break;
+			case MANGROVE_LEAVES:
+			    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+				    Ingredient.FLEET_LOTUS_SEEDS.getIngredient());
+			    break;
+			case OAK_LEAVES:
+			    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+				    Ingredient.APPLE.getIngredient());
+			    break;
+			case AZALEA_LEAVES:
+			case FLOWERING_AZALEA_LEAVES:
+			    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+				    Ingredient.WILDBERRY.getIngredient());
+			    break;
+			case JUNGLE_LEAVES:
+			    e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+				    Main.randomInCollection(jungle).getIngredient());
+			    break;
+			default:
+			    break;
+			}
+		    }
 		}
 	    }
 	}
@@ -1529,73 +2015,42 @@ public class Listener implements org.bukkit.event.Listener {
 	}
     }
 
-    @EventHandler
-    public void onRightClickNPCEvent(RightClickNPCEvent e) {
-	Player p = e.getPlayer();
-	PlayerData PData = PlayerData.getData(p);
-	NPCMemory memory = e.getMemory();
-	if (memory.hasStable() && memory.isMainNPC()) {
-	    StableMemory stable = memory.getStable();
-	    if (PData.hasDiscoveredStable(stable)) {
-		/*
-		 * Inventory inv = InventoryManager.createInventory(null, 54, "Stable",
-		 * CustomInventoryType.STABLE); if (stable.isOwner(p)) {
-		 * StableManager.populateStableOwnerMenu(inv, p, stable); } else {
-		 * StableManager.populateStableTeleport(inv, p, stable, 0); }
-		 */
-	    } else {
-		p.sendMessage("Discovered !");
-		PData.discoverStable(stable);
-	    }
-	}
-    }
+    /*
+     * @EventHandler public void onRightClickNPCEvent(RightClickNPCEvent e) { Player
+     * p = e.getPlayer(); PlayerData PData = PlayerData.getData(p); NPCMemory memory
+     * = e.getMemory(); if (memory.hasStable() && memory.isMainNPC()) { StableMemory
+     * stable = memory.getStable(); if (PData.hasDiscoveredStable(stable)) {
+     * 
+     * Inventory inv = InventoryManager.createInventory(null, 54, "Stable",
+     * CustomInventoryType.STABLE); if (stable.isOwner(p)) {
+     * StableManager.populateStableOwnerMenu(inv, p, stable); } else {
+     * StableManager.populateStableTeleport(inv, p, stable, 0); }
+     * 
+     * } else { p.sendMessage("Discovered !"); PData.discoverStable(stable); } } }
+     */
 
-    @EventHandler
-    public void onLeftClickNPCEvent(final LeftClickNPCEvent e) {
-	Player player = e.getPlayer();
-	if (player.getInventory().getItemInMainHand().getType() == Material.NETHER_STAR) {
-	    for (Player p : Bukkit.getOnlinePlayers()) {
-		final Chunk chunk = NPCHandler.getChunkFromBrain(e.getNpcBrain());
-		Thread thread = new Thread(new Runnable() {
-		    public void run() {
-			NPCHandler.removeNPC(e.getNpcBrain(), p, chunk);
-			List<Thread> tasks = Listener.NPCTasks.get(p);
-			if (tasks != null) {
-			    if (!tasks.isEmpty()) {
-				if (tasks.contains(Thread.currentThread()))
-				    tasks.remove(Thread.currentThread());
-				if (!tasks.isEmpty()) {
-				    Thread nextThread = tasks.get(0);
-				    nextThread.start();
-				} else {
-				    Listener.chargingNPCs.put(p, Boolean.valueOf(false));
-				}
-			    } else {
-				Listener.chargingNPCs.put(p, Boolean.valueOf(false));
-			    }
-			} else {
-			    Listener.chargingNPCs.put(p, Boolean.valueOf(false));
-			}
-			Listener.NPCTasks.put(p, tasks);
-		    }
-		});
-		if (chargingNPCs.get(p) == null)
-		    chargingNPCs.put(p, Boolean.valueOf(false));
-		if (((Boolean) chargingNPCs.get(p)).booleanValue()) {
-		    List<Thread> tasks = NPCTasks.get(p);
-		    if (tasks == null)
-			tasks = new ArrayList<>();
-		    tasks.add(thread);
-		    NPCTasks.put(p, tasks);
-		    continue;
-		}
-		chargingNPCs.put(p, Boolean.valueOf(true));
-		thread.start();
-	    }
-	} else {
-	    player.sendMessage("Left Click");
-	}
-    }
+    /*
+     * @EventHandler public void onLeftClickNPCEvent(final LeftClickNPCEvent e) {
+     * Player player = e.getPlayer(); if
+     * (player.getInventory().getItemInMainHand().getType() == Material.NETHER_STAR)
+     * { for (Player p : Bukkit.getOnlinePlayers()) { final Chunk chunk =
+     * NPCHandler.getChunkFromBrain(e.getNpcBrain()); Thread thread = new Thread(new
+     * Runnable() { public void run() { NPCHandler.removeNPC(e.getNpcBrain(), p,
+     * chunk); List<Thread> tasks = Listener.NPCTasks.get(p); if (tasks != null) {
+     * if (!tasks.isEmpty()) { if (tasks.contains(Thread.currentThread()))
+     * tasks.remove(Thread.currentThread()); if (!tasks.isEmpty()) { Thread
+     * nextThread = tasks.get(0); nextThread.start(); } else {
+     * Listener.chargingNPCs.put(p, Boolean.valueOf(false)); } } else {
+     * Listener.chargingNPCs.put(p, Boolean.valueOf(false)); } } else {
+     * Listener.chargingNPCs.put(p, Boolean.valueOf(false)); }
+     * Listener.NPCTasks.put(p, tasks); } }); if (chargingNPCs.get(p) == null)
+     * chargingNPCs.put(p, Boolean.valueOf(false)); if (((Boolean)
+     * chargingNPCs.get(p)).booleanValue()) { List<Thread> tasks = NPCTasks.get(p);
+     * if (tasks == null) tasks = new ArrayList<>(); tasks.add(thread);
+     * NPCTasks.put(p, tasks); continue; } chargingNPCs.put(p,
+     * Boolean.valueOf(true)); thread.start(); } } else {
+     * player.sendMessage("Left Click"); } }
+     */
 
     @EventHandler
     public void onPlayerPotion(EntityPotionEffectEvent e) {
@@ -1687,5 +2142,118 @@ public class Listener implements org.bukkit.event.Listener {
 	PlayerData PData = PlayerData.getData(p);
 	if (!PData.isVisible())
 	    e.setCancelled(true);
+	else {
+	    Random rand = new Random();
+	    double d = rand.nextFloat();
+	    if (d < 0.08 * PData.getSneaky())
+		e.setCancelled(true);
+	}
+    }
+
+    @EventHandler
+    public void onPlayerFish(PlayerFishEvent e) {
+	if (e.getCaught() instanceof org.bukkit.entity.Item) {
+	    org.bukkit.entity.Item item = (org.bukkit.entity.Item) e.getCaught();
+	    Biome b = e.getHook().getLocation().getBlock().getBiome();
+	    Collection<Ingredient> normal = Arrays.asList(new Ingredient[] { Ingredient.STAMINOKA_BASS,
+		    Ingredient.ARMORED_CARP, Ingredient.VOLTFIN_TROUT, Ingredient.RAZORCLAW_CRAB });
+	    Collection<Ingredient> cold = Arrays
+		    .asList(new Ingredient[] { Ingredient.ARMORED_PORGY, Ingredient.HEARTY_SALMON,
+			    Ingredient.SNEAKY_RIVER_SNAIL, Ingredient.CHILLFIN_TROUT, Ingredient.IRONSHELL_CRAB });
+	    Collection<Ingredient> warm = Arrays.asList(new Ingredient[] { Ingredient.MIGHTY_CARP,
+		    Ingredient.MIGHTY_PORGY, Ingredient.HEARTY_BLUESHELL_SNAIL, Ingredient.SIZZLEFIN_TROUT,
+		    Ingredient.BRIGHT_EYED_CRAB });
+	    Collection<Ingredient> river = Arrays.asList(new Ingredient[] { Ingredient.SANKE_CARP,
+		    Ingredient.HEARTY_BASS, Ingredient.HYRULE_BASS, Ingredient.STEALTHFIN_TROUT });
+	    Random rand = new Random();
+	    int r = Math.abs(rand.nextInt()) % 100;
+	    if (r < 50) {
+		switch (b) {
+		case OCEAN:
+		case DEEP_OCEAN:
+		    item.setItemStack(Main.randomInCollection(normal).getIngredient());
+		    break;
+		case FROZEN_OCEAN:
+		case DEEP_FROZEN_OCEAN:
+		case COLD_OCEAN:
+		case DEEP_COLD_OCEAN:
+		    item.setItemStack(Main.randomInCollection(cold).getIngredient());
+		    break;
+		case LUKEWARM_OCEAN:
+		case DEEP_LUKEWARM_OCEAN:
+		case WARM_OCEAN:
+		    item.setItemStack(Main.randomInCollection(warm).getIngredient());
+		    break;
+		case RIVER:
+		    item.setItemStack(Main.randomInCollection(river).getIngredient());
+		default:
+		    break;
+		}
+	    }
+	}
+    }
+
+    @EventHandler
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent e) {
+	Entity ent = e.getRightClicked();
+	if (ent instanceof WanderingTrader) {
+	    e.setCancelled(true);
+	    TraderInventoryManager manager = TraderInventoryManager.getManager((WanderingTrader) ent);
+	    e.getPlayer().openInventory(manager.getInventory());
+	}
+    }
+
+    @EventHandler
+    public void onLeavesDecay(LeavesDecayEvent e) {
+	Random rand = new Random();
+	int r = Math.abs(rand.nextInt()) % 1000;
+	if (r <= 50) {
+	    Collection<Ingredient> jungle = Arrays.asList(new Ingredient[] { Ingredient.HYDROMELON,
+		    Ingredient.MIGHTY_BANANAS, Ingredient.HEARTY_DURIAN, Ingredient.PALM_FRUIT });
+	    switch (e.getBlock().getType()) {
+	    case ACACIA_LEAVES:
+	    case BIRCH_LEAVES:
+		e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+			Ingredient.VOLTFRUIT.getIngredient());
+		break;
+	    case MANGROVE_LEAVES:
+		e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+			Ingredient.FLEET_LOTUS_SEEDS.getIngredient());
+		break;
+	    case OAK_LEAVES:
+		e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(), Ingredient.APPLE.getIngredient());
+		break;
+	    case AZALEA_LEAVES:
+	    case FLOWERING_AZALEA_LEAVES:
+		e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+			Ingredient.WILDBERRY.getIngredient());
+		break;
+	    case JUNGLE_LEAVES:
+		e.getBlock().getWorld().dropItemNaturally(e.getBlock().getLocation(),
+			Main.randomInCollection(jungle).getIngredient());
+		break;
+	    default:
+		break;
+	    }
+	}
+    }
+
+    @EventHandler
+    public void onVehicleMove(VehicleMoveEvent e) {
+	Vehicle v = e.getVehicle();
+	if (v instanceof StorageMinecart) {
+	    Location loc = e.getTo();
+	    if (loc.getWorld().getName().equals("world_the_end") && loc.getY() <= 0.0D) {
+		Location newLoc = new Location(Bukkit.getWorld("world"), loc.getX(), 400.0D, loc.getZ());
+		newLoc.getChunk().load();
+		v.teleport(newLoc);
+		v.setVelocity(v.getVelocity());
+	    } else if (loc.getWorld().getName().equals("world") && loc.getY() >= 450.0D) {
+		Location newLoc = new Location(Bukkit.getWorld("world_the_end"), loc.getX(), 0.0D, loc.getZ());
+		newLoc.getChunk().load();
+		v.teleport(newLoc);
+		v.setVelocity(v.getVelocity());
+	    }
+	}
     }
 }

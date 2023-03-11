@@ -77,7 +77,7 @@ public enum Food {
 	ItemStack item = new ItemStack(Material.BREAD);
 	ItemMeta meta = item.getItemMeta();
 	meta.setCustomModelData(Integer.valueOf(modelData));
-	meta.setDisplayName(displayName);
+	meta.setDisplayName("§f"+displayName);
 	item.setItemMeta(meta);
 	NBTItem nbt = new NBTItem(item);
 	nbt.setString("FoodType", this.toString());

@@ -8,6 +8,7 @@ import java.util.Set;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -15,6 +16,7 @@ import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import de.tr7zw.nbtapi.NBTItem;
 import fr.yezzipe.zelda.Main;
@@ -27,7 +29,7 @@ public class CookingInventoryManager extends InventoryManager {
 
     @SuppressWarnings("unused")
     private Player p;
-    
+
     private CustomBlock cb;
 
     private Collection<Integer> blockedSlots = Arrays
@@ -78,7 +80,6 @@ public class CookingInventoryManager extends InventoryManager {
 	} else if (shift && iscurrItemRing && nextItem.getType() == Material.AIR
 		&& !restrictedSlots.contains(Integer.valueOf(e.getRawSlot()))) {
 	    e.setCancelled(true);
-	    System.out.println(currItem);
 	    if (inv.firstEmpty() > -1) {
 		ItemStack temp = currItem.clone();
 		currItem.setAmount(currItem.getAmount() - 1);
@@ -98,15 +99,16 @@ public class CookingInventoryManager extends InventoryManager {
 	    e.setCancelled(true);
 	} else if (containRestricted) {
 	    boolean isNextItem = Ingredient.isIngredient(nextItem);
-	    
 	    if (isNextItem) {
 		int i = 0;
 		for (int slot : map.keySet()) {
 		    ItemStack temp = map.get(slot);
 		    if (restrictedSlots.contains(slot)) {
-			temp.setAmount(1);
-			inv.setItem(slot, temp);
-			i++;
+			if (inv.getItem(slot) == null) {
+			    temp.setAmount(1);
+			    inv.setItem(slot, temp);
+			    i++;
+			}
 		    }
 		}
 		nextItem.setAmount(nextItem.getAmount() - i);
@@ -118,7 +120,7 @@ public class CookingInventoryManager extends InventoryManager {
 			if (!restrictedSlots.contains(slot)) {
 			    if (temp.getAmount() > 1) {
 				temp.setAmount(x);
-			    	t += x;
+				t += x;
 			    } else {
 				t++;
 			    }
@@ -127,16 +129,14 @@ public class CookingInventoryManager extends InventoryManager {
 		    }
 		    nextItem.setAmount(nextItem.getAmount() - t);
 		}
-		System.out.println(nextItem.getAmount());
-		System.out.println(nextItem);
 		Bukkit.getScheduler().runTaskLater((Plugin) Main.getInstance(), new Runnable() {
 
 		    @Override
 		    public void run() {
 			e.getView().setCursor(nextItem);
-			
+
 		    }
-		    
+
 		}, 1);
 		e.setCancelled(true);
 	    }
@@ -157,17 +157,25 @@ public class CookingInventoryManager extends InventoryManager {
 		ingredients.add(Ingredient.valueOf(nbt.getString("IngredientType")));
 	}
 	Recipe r = Recipe.getRecipe(ingredients);
-	if (r != null) {
-	    ItemStack item = r.getOutput().getFood();
-	    FoodStatCalculator calc = new FoodStatCalculator(ingredients, r.getOutput());
-	    item = calc.apply(item);
-	    cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), item);
-	} else {
-	    for (Ingredient i : ingredients) {
-		 cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), i.getIngredient());
+	if (r != null)
+	    p.playSound(p.getLocation(), "zelda.cooking", SoundCategory.BLOCKS, 1000.0F, 1.0F);
+	new BukkitRunnable() {
+
+	    @Override
+	    public void run() {
+		if (r != null) {
+		    ItemStack item = r.getOutput().getFood();
+		    FoodStatCalculator calc = new FoodStatCalculator(ingredients, r.getOutput());
+		    item = calc.apply(item);
+		    cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), item);
+		} else {
+		    for (Ingredient i : ingredients) {
+			cb.getBlock().getWorld().dropItemNaturally(cb.getBlock().getLocation(), i.getIngredient());
+		    }
+		}
 	    }
-	}
-	// Play Sound
+	}.runTaskLater((Plugin) Main.getInstance(), 120);
+
     }
 
     private static boolean isContained(Set<Integer> set, Collection<Integer> coll) {
